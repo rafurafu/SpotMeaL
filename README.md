@@ -1,7 +1,5 @@
 # SpotMeal - 飲食店発見アプリ
 
-![SpotMeal Logo](https://via.placeholder.com/150x60/0078FF/FFFFFF?text=SpotMeal)
-
 ## 📱 アプリコンセプト
 
 「こんな飲食店があるよ！」を店側からアピールし、ユーザーの新しいお店発見をサポートしながら、来店報酬でユーザーも稼げるプラットフォーム
