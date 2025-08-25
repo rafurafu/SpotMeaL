@@ -1,0 +1,16 @@
+{
+  "name": "spot-meal",
+  "version": "1.0.0",
+  "description": "A meal spot discovery application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest"
+  },
+  "keywords": ["meal", "restaurant", "food", "discovery"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
