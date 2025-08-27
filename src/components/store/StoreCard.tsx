@@ -82,15 +82,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
             {store.description}
           </Text>
 
-          {/* 無料投稿残り回数 */}
-          {store.freePostsRemaining > 0 && (
-            <View style={styles.freePostsContainer}>
-              <Ionicons name="gift-outline" size={14} color={colors.success} />
-              <Text style={styles.freePostsText}>
-                あと{store.freePostsRemaining}回無料
-              </Text>
-            </View>
-          )}
         </View>
       </TouchableOpacity>
     </Card>
@@ -164,15 +155,17 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryBadge: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   categoryText: {
     fontSize: 12,
-    color: colors.primary,
-    fontWeight: '500',
+    color: colors.white,
+    fontWeight: '600',
   },
   metaRow: {
     flexDirection: 'row',

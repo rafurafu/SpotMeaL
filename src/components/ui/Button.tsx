@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
   },
   small: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 32,
+    paddingVertical: 6,
+    minHeight: 28,
   },
   medium: {
     paddingHorizontal: 16,
