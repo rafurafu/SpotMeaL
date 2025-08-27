@@ -7,9 +7,11 @@ import {
   Alert,
   TouchableOpacity,
   Dimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -107,9 +109,21 @@ export const MapScreen: React.FC = () => {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [mapProvider, setMapProvider] = useState(PROVIDER_DEFAULT);
+  const [showProviderMenu, setShowProviderMenu] = useState(false);
 
   useEffect(() => {
     (async () => {
+      // 保存されたマッププロバイダーを読み込み
+      try {
+        const savedProvider = await AsyncStorage.getItem('mapProvider');
+        if (savedProvider) {
+          setMapProvider(savedProvider);
+        }
+      } catch (error) {
+        console.log('マッププロバイダーの読み込みに失敗:', error);
+      }
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('位置情報へのアクセスが拒否されました');
@@ -142,6 +156,26 @@ export const MapScreen: React.FC = () => {
       case '寿司': return '#2196F3';
       case 'カフェ': return '#9C27B0';
       default: return colors.primary;
+    }
+  };
+
+  const getProviderName = (provider: any): string => {
+    switch (provider) {
+      case PROVIDER_GOOGLE: return 'Google Maps';
+      case PROVIDER_DEFAULT: return 'デフォルト';
+      default: return 'デフォルト';
+    }
+  };
+
+  const handleProviderChange = async (provider: any) => {
+    setMapProvider(provider);
+    setShowProviderMenu(false);
+    
+    // 選択したプロバイダーを保存
+    try {
+      await AsyncStorage.setItem('mapProvider', provider);
+    } catch (error) {
+      console.log('マッププロバイダーの保存に失敗:', error);
     }
   };
 
@@ -181,17 +215,51 @@ export const MapScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>近くの店舗</Text>
-        <TouchableOpacity style={styles.locationButton}>
-          <Ionicons name="locate" size={24} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+    <TouchableWithoutFeedback onPress={() => setShowProviderMenu(false)}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>近くの店舗</Text>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.providerButton}
+              onPress={() => setShowProviderMenu(!showProviderMenu)}
+            >
+              <Ionicons name="layers" size={20} color={colors.primary} />
+              <Text style={styles.providerButtonText}>{getProviderName(mapProvider)}</Text>
+              <Ionicons name="chevron-down" size={16} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.locationButton}>
+              <Ionicons name="locate" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+      {showProviderMenu && (
+        <View style={styles.providerMenu}>
+          <TouchableOpacity 
+            style={[styles.providerMenuItem, mapProvider === PROVIDER_DEFAULT && styles.providerMenuItemActive]}
+            onPress={() => handleProviderChange(PROVIDER_DEFAULT)}
+          >
+            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_DEFAULT ? colors.primary : 'transparent'} />
+            <Text style={[styles.providerMenuText, mapProvider === PROVIDER_DEFAULT && styles.providerMenuTextActive]}>
+              デフォルト (無料)
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.providerMenuItem, mapProvider === PROVIDER_GOOGLE && styles.providerMenuItemActive]}
+            onPress={() => handleProviderChange(PROVIDER_GOOGLE)}
+          >
+            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_GOOGLE ? colors.primary : 'transparent'} />
+            <Text style={[styles.providerMenuText, mapProvider === PROVIDER_GOOGLE && styles.providerMenuTextActive]}>
+              Google Maps (有料)
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <MapView
         style={styles.map}
-        provider={PROVIDER_DEFAULT}
+        provider={mapProvider}
         region={currentRegion}
         showsUserLocation={true}
         showsMyLocationButton={false}
@@ -252,7 +320,8 @@ export const MapScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -276,10 +345,63 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.gray[900],
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  providerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.gray[100],
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  providerButtonText: {
+    fontSize: fontSizes.sm,
+    color: colors.primary,
+    marginHorizontal: 4,
+    fontWeight: '500',
+  },
   locationButton: {
     padding: 8,
     borderRadius: 8,
     backgroundColor: colors.gray[100],
+  },
+  providerMenu: {
+    position: 'absolute',
+    top: 60,
+    right: DIMENSIONS.screenPadding,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
+    minWidth: 160,
+  },
+  providerMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
+  },
+  providerMenuItemActive: {
+    backgroundColor: colors.primary + '10',
+  },
+  providerMenuText: {
+    fontSize: fontSizes.sm,
+    color: colors.gray[700],
+    marginLeft: 8,
+  },
+  providerMenuTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   map: {
     flex: 1,
