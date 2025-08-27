@@ -173,20 +173,15 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* 固定ヘッダー部分 */}
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        style={styles.fixedSection}
-      >
+      <View style={styles.fixedSection}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.logoContainer}>
-              <View style={styles.logoCircle}>
-                <Text style={styles.logoIcon}>🍽️</Text>
-              </View>
+              <Image 
+                source={require('../../assets/images/icon.png')}
+                style={styles.logoImage}
+              />
             </View>
             <View style={styles.headerText}>
               <Text style={styles.appTitle}>SpotMeal</Text>
@@ -207,7 +202,7 @@ export const HomeScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.rewardBadge}>
-              <Text style={styles.rewardBadgeText}>今すぐ</Text>
+              <Text style={styles.rewardBadgeText}>現在</Text>
             </View>
           </View>
         </Card>
@@ -242,7 +237,7 @@ export const HomeScreen: React.FC = () => {
             {categories.map(renderCategoryButton)}
           </ScrollView>
         </View>
-      </ScrollView>
+      </View>
 
       {/* スクロール可能な店舗リスト部分 */}
       <View style={styles.storeListContainer}>
@@ -259,9 +254,17 @@ export const HomeScreen: React.FC = () => {
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.storeListContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
           />
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             <Card style={styles.emptyState}>
               <View style={styles.emptyStateContent}>
                 <Ionicons name="search" size={48} color={colors.gray[300]} />
@@ -299,26 +302,18 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: DIMENSIONS.screenPadding,
-    paddingVertical: 8,
-    backgroundColor: colors.white,
+    paddingVertical: 0,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   logoContainer: {
-    marginRight: 12,
+    marginRight: 8,
   },
-  logoCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoIcon: {
-    fontSize: 16,
+  logoImage: {
+    width: 60,
+    height: 60,
   },
   headerText: {
     flex: 1,
@@ -335,7 +330,7 @@ const styles = StyleSheet.create({
   },
   rewardCard: {
     marginHorizontal: DIMENSIONS.screenPadding,
-    marginTop: 8,
+    marginTop: 0,
     backgroundColor: colors.background,
   },
   rewardHeader: {
@@ -411,7 +406,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: DIMENSIONS.screenPadding,
   },
   categoryButton: {
-    minWidth: 80,
+    minWidth: 60,
     marginRight: 8,
   },
   storeListContainer: {
