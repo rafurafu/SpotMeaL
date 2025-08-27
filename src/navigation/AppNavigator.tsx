@@ -10,6 +10,7 @@ import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
+import { MapScreen } from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 
@@ -109,7 +110,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Map" 
-        component={FavoritesScreen} 
+        component={MapScreen} 
         options={{ tabBarLabel: 'マップ' }} 
       />
       <Tab.Screen 
