@@ -9,10 +9,11 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
 
-import { colors } from '../utils/constants';
+import { colors, fontSizes } from '../utils/constants';
 
 // 型定義
 export type RootStackParamList = {
@@ -23,11 +24,11 @@ export type RootStackParamList = {
 };
 
 export type TabParamList = {
-  Home: undefined;
-  Search: undefined;
+  Discover: undefined;
+  Map: undefined;
   QRScan: undefined;
-  Earnings: undefined;
-  Profile: undefined;
+  Store: undefined;
+  MyPage: undefined;
 };
 
 interface Store {
@@ -47,13 +48,21 @@ interface Store {
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// 検索画面のプレースホルダー
-const SearchScreen = () => (
+// プレースホルダー画面コンポーネント
+const PlaceholderScreen = ({ title, description }: { title: string; description: string }) => (
   <View style={styles.placeholderScreen}>
-    <Ionicons name="search" size={64} color={colors.textSecondary} />
-    <Text style={styles.placeholderTitle}>検索機能</Text>
-    <Text style={styles.placeholderText}>実装予定</Text>
+    <Ionicons name="construct" size={64} color={colors.gray[300]} />
+    <Text style={styles.placeholderTitle}>{title}</Text>
+    <Text style={styles.placeholderText}>{description}</Text>
   </View>
+);
+
+// QRスキャン画面のプレースホルダー（実際の画面ができるまで）
+const QRScanPlaceholder = () => (
+  <PlaceholderScreen
+    title="QRスキャン"
+    description="来店確認用QRスキャン機能を実装予定"
+  />
 );
 
 // タブナビゲーター
@@ -65,58 +74,58 @@ const TabNavigator = () => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
           switch (route.name) {
-            case 'Home':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Search':
+            case 'Discover':
               iconName = focused ? 'search' : 'search-outline';
+              break;
+            case 'Map':
+              iconName = focused ? 'map' : 'map-outline';
               break;
             case 'QRScan':
               iconName = focused ? 'qr-code' : 'qr-code-outline';
               break;
-            case 'Earnings':
-              iconName = focused ? 'wallet' : 'wallet-outline';
+            case 'Store':
+              iconName = focused ? 'storefront' : 'storefront-outline';
               break;
-            case 'Profile':
+            case 'MyPage':
               iconName = focused ? 'person' : 'person-outline';
               break;
             default:
               iconName = 'ellipse';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={24} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.gray[400],
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: false,
       })}
     >
       <Tab.Screen 
-        name="Home" 
+        name="Discover" 
         component={HomeScreen} 
-        options={{ tabBarLabel: 'ホーム' }} 
+        options={{ tabBarLabel: '発見' }} 
       />
       <Tab.Screen 
-        name="Search" 
-        component={SearchScreen} 
-        options={{ tabBarLabel: '検索' }} 
+        name="Map" 
+        component={FavoritesScreen} 
+        options={{ tabBarLabel: 'マップ' }} 
       />
       <Tab.Screen 
         name="QRScan" 
-        component={QRScanScreen} 
-        options={{ tabBarLabel: 'QRスキャン' }} 
+        component={QRScanPlaceholder} 
+        options={{ tabBarLabel: 'QR' }} 
       />
       <Tab.Screen 
-        name="Earnings" 
+        name="Store" 
         component={EarningsScreen} 
-        options={{ tabBarLabel: '収益' }} 
+        options={{ tabBarLabel: '店舗' }} 
       />
       <Tab.Screen 
-        name="Profile" 
+        name="MyPage" 
         component={ProfileScreen} 
-        options={{ tabBarLabel: 'プロフィール' }} 
+        options={{ tabBarLabel: 'マイページ' }} 
       />
     </Tab.Navigator>
   );
@@ -128,12 +137,12 @@ export const AppNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: colors.surface,
-          shadowColor: colors.border,
+          backgroundColor: colors.white,
+          shadowColor: colors.gray[200],
         },
-        headerTintColor: colors.text,
+        headerTintColor: colors.gray[900],
         headerTitleStyle: {
-          fontSize: 18,
+          fontSize: fontSizes.lg,
           fontWeight: '600',
         },
       }}
@@ -146,7 +155,9 @@ export const AppNavigator = () => {
       <Stack.Screen 
         name="StoreDetail" 
         component={StoreDetailScreen}
-        options={{ title: '店舗詳細' }}
+        options={{ 
+          headerShown: false, // カスタムヘッダーを使用するため非表示
+        }}
       />
       <Stack.Screen 
         name="Reservation" 
@@ -164,32 +175,45 @@ export const AppNavigator = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingBottom: 4,
-    paddingTop: 8,
-    height: 64,
+    backgroundColor: colors.white,
+    borderTopWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 16,
+    paddingBottom: 8,
+    paddingTop: 12,
+    height: 80,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+    marginTop: 2,
   },
   placeholderScreen: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.gray[50],
+    paddingHorizontal: 32,
   },
   placeholderTitle: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: colors.gray[600],
     marginTop: 16,
     marginBottom: 8,
   },
   placeholderText: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontSize: fontSizes.base,
+    color: colors.gray[500],
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

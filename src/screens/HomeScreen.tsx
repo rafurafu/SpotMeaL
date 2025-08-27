@@ -5,15 +5,29 @@ import {
   Text,
   TextInput,
   ScrollView,
+  FlatList,
   StyleSheet,
   SafeAreaView,
   RefreshControl,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { StoreCard } from '../components/store/StoreCard';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { colors, spacing } from '../utils/constants';
+import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
+
+// Navigation types
+type RootStackParamList = {
+  Home: undefined;
+  StoreDetail: { store: Store };
+  Reservation: { store: Store };
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 interface Store {
   id: string;
@@ -27,12 +41,6 @@ interface Store {
   currentReward: number;
   isAvailable: boolean;
   freePostsRemaining: number;
-}
-
-interface HomeScreenProps {
-  onStoreSelect?: (store: Store) => void;
-  navigation?: any;
-  route?: any;
 }
 
 // 現在の時間帯に基づく報酬を取得する関数
@@ -58,7 +66,7 @@ const mockStores: Store[] = [
     name: '和食処 さくら',
     category: '和食',
     image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400',
-    description: 'こだわりの食材を使った季節の和食をお楽しみください。',
+    description: 'こだわりの食材を使った季節の和食をお楽しみください。落ち着いた雰囲気の店内でゆっくりとお食事をどうぞ。',
     address: '東京都渋谷区神宮前1-2-3',
     rating: 4.5,
     distance: 0.3,
@@ -71,7 +79,7 @@ const mockStores: Store[] = [
     name: 'ラーメン横丁',
     category: 'ラーメン',
     image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
-    description: '濃厚豚骨スープが自慢のラーメン店。',
+    description: '濃厚豚骨スープが自慢のラーメン店。深夜まで営業しているので、遅い時間でもお楽しみいただけます。',
     address: '東京都新宿区歌舞伎町2-1-5',
     rating: 4.2,
     distance: 0.8,
@@ -84,7 +92,7 @@ const mockStores: Store[] = [
     name: '寿司 一心',
     category: '寿司',
     image: 'https://images.unsplash.com/photo-1563612116625-3012372fccce?w=400',
-    description: '新鮮な魚介を使った本格江戸前寿司。',
+    description: '新鮮な魚介を使った本格江戸前寿司。職人の技が光る逸品をカウンターでお楽しみください。',
     address: '東京都中央区銀座4-5-6',
     rating: 4.8,
     distance: 1.2,
@@ -92,16 +100,35 @@ const mockStores: Store[] = [
     isAvailable: true,
     freePostsRemaining: 3,
   },
+  {
+    id: '4',
+    name: 'カフェ・ド・パリ',
+    category: 'カフェ',
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
+    description: 'パリの街角にあるような雰囲気のカフェ。こだわりのコーヒーと手作りスイーツをご提供。',
+    address: '東京都港区表参道3-4-7',
+    rating: 4.3,
+    distance: 0.5,
+    currentReward: getCurrentReward().amount,
+    isAvailable: true,
+    freePostsRemaining: 0,
+  },
 ];
 
 const categories = ['全て', '和食', 'ラーメン', '寿司', 'カフェ', 'イタリアン'];
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigation }) => {
+export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('全て');
-  const [stores] = useState<Store[]>(mockStores);
+  const [stores, setStores] = useState<Store[]>(mockStores);
   const [refreshing, setRefreshing] = useState(false);
   const [currentReward, setCurrentReward] = useState(getCurrentReward());
+
+  // 店舗選択時のハンドラー
+  const handleStoreSelect = (store: Store) => {
+    navigation.navigate('StoreDetail', { store });
+  };
 
   // フィルタリングされた店舗リスト
   const filteredStores = stores.filter(store => {
@@ -114,7 +141,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
   // 引っ張って更新
   const onRefresh = async () => {
     setRefreshing(true);
-    // APIから最新データを取得する処理
     setTimeout(() => {
       setCurrentReward(getCurrentReward());
       setRefreshing(false);
@@ -125,8 +151,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentReward(getCurrentReward());
-    }, 60000); // 1分
-
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -141,18 +166,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
     />
   );
 
+  const renderStoreItem = ({ item }: { item: Store }) => (
+    <StoreCard store={item} onPress={handleStoreSelect} />
+  );
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* 固定ヘッダー部分 */}
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
+        style={styles.fixedSection}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>SpotMeal</Text>
-          <Text style={styles.subtitle}>新しいお店を発見してお得に楽しもう</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logoCircle}>
+                <Text style={styles.logoIcon}>🍽️</Text>
+              </View>
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.appTitle}>SpotMeal</Text>
+              <Text style={styles.subtitle}>新しいお店を発見してお得に楽しもう</Text>
+            </View>
+          </View>
         </View>
 
         {/* 現在の報酬情報 */}
@@ -161,7 +201,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
             <View style={styles.rewardInfo}>
               <Text style={styles.rewardTimeSlot}>{currentReward.timeSlot}</Text>
               <View style={styles.rewardAmount}>
-                <Ionicons name="cash-outline" size={24} color={colors.warning} />
+                <Ionicons name="diamond" size={20} color={colors.warning} />
                 <Text style={styles.rewardValue}>¥{currentReward.amount}</Text>
                 <Text style={styles.rewardLabel}>来店報酬</Text>
               </View>
@@ -175,22 +215,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
         {/* 検索バー */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <Ionicons name="search" size={20} color={colors.gray[400]} />
             <TextInput
               style={styles.searchInput}
               placeholder="店名やカテゴリで検索"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.gray[400]}
             />
             {searchQuery.length > 0 && (
-              <Button
-                title="×"
-                onPress={() => setSearchQuery('')}
-                variant="outline"
-                size="small"
-                style={styles.clearButton}
-              />
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={20} color={colors.gray[400]} />
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -206,41 +242,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
             {categories.map(renderCategoryButton)}
           </ScrollView>
         </View>
+      </ScrollView>
 
-        {/* 店舗リスト */}
-        <View style={styles.storeListContainer}>
-          <View style={styles.storeListHeader}>
-            <Text style={styles.storeListTitle}>
-              おすすめの店舗 ({filteredStores.length}件)
-            </Text>
-            {selectedCategory !== '全て' && (
-              <Button
-                title="フィルターをクリア"
-                onPress={() => setSelectedCategory('全て')}
-                variant="outline"
-                size="small"
-              />
-            )}
-          </View>
-          
-          {filteredStores.length > 0 ? (
-            filteredStores.map((store) => (
-              <StoreCard
-                key={store.id}
-                store={store}
-                onPress={(store) => {
-                  if (onStoreSelect) {
-                    onStoreSelect(store);
-                  } else if (navigation) {
-                    navigation.navigate('StoreDetail', { store });
-                  }
-                }}
-              />
-            ))
-          ) : (
+      {/* スクロール可能な店舗リスト部分 */}
+      <View style={styles.storeListContainer}>
+        <View style={styles.storeListHeader}>
+          <Text style={styles.storeListTitle}>
+            おすすめの店舗 ({filteredStores.length}件)
+          </Text>
+        </View>
+        
+        {filteredStores.length > 0 ? (
+          <FlatList
+            data={filteredStores}
+            renderItem={renderStoreItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.storeListContent}
+          />
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
             <Card style={styles.emptyState}>
               <View style={styles.emptyStateContent}>
-                <Ionicons name="search" size={48} color={colors.textSecondary} />
+                <Ionicons name="search" size={48} color={colors.gray[300]} />
                 <Text style={styles.emptyStateTitle}>店舗が見つかりませんでした</Text>
                 <Text style={styles.emptyStateDescription}>
                   検索条件を変更してお試しください
@@ -257,12 +281,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
                 />
               </View>
             </Card>
-          )}
-        </View>
-
-        {/* 底部のスペース */}
-        <View style={styles.bottomSpace} />
-      </ScrollView>
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -270,25 +291,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStoreSelect, navigatio
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.gray[50],
+  },
+  fixedSection: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   header: {
-    padding: spacing.md,
-    backgroundColor: colors.surface,
+    paddingHorizontal: DIMENSIONS.screenPadding,
+    paddingVertical: 8,
+    backgroundColor: colors.white,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginRight: 12,
+  },
+  logoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoIcon: {
+    fontSize: 16,
+  },
+  headerText: {
+    flex: 1,
   },
   appTitle: {
-    fontSize: 32,
+    fontSize: fontSizes.xl,
     fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
+    color: colors.gray[900],
+    marginBottom: 0,
   },
   subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontSize: fontSizes.xs,
+    color: colors.gray[600],
   },
   rewardCard: {
-    marginHorizontal: spacing.md,
-    marginTop: 16,
+    marginHorizontal: DIMENSIONS.screenPadding,
+    marginTop: 8,
     backgroundColor: colors.background,
   },
   rewardHeader: {
@@ -300,110 +347,106 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rewardTimeSlot: {
-    fontSize: 14,
+    fontSize: fontSizes.xs,
     color: colors.primary,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   rewardAmount: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   rewardValue: {
-    fontSize: 24,
+    fontSize: fontSizes.lg,
     fontWeight: '700',
-    color: colors.text,
-    marginLeft: 8,
+    color: colors.gray[900],
+    marginLeft: 6,
   },
   rewardLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 8,
+    fontSize: fontSizes.xs,
+    color: colors.gray[600],
+    marginLeft: 6,
   },
   rewardBadge: {
     backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   rewardBadgeText: {
-    fontSize: 14,
-    color: colors.surface,
+    fontSize: fontSizes.xs,
+    color: colors.white,
     fontWeight: '600',
   },
   searchContainer: {
-    paddingHorizontal: spacing.md,
-    paddingTop: 20,
+    paddingHorizontal: DIMENSIONS.screenPadding,
+    paddingTop: 8,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    backgroundColor: colors.white,
+    borderRadius: DIMENSIONS.buttonRadius,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.gray[200],
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: colors.text,
+    fontSize: fontSizes.base,
+    color: colors.gray[900],
     marginLeft: 8,
   },
-  clearButton: {
-    minHeight: 28,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
   categoryContainer: {
-    paddingTop: 20,
+    paddingTop: 8,
   },
   categoryTitle: {
-    fontSize: 18,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    marginBottom: 12,
+    color: colors.gray[900],
+    paddingHorizontal: DIMENSIONS.screenPadding,
+    marginBottom: 6,
   },
   categoryScrollContent: {
-    paddingHorizontal: spacing.md,
-    gap: 8,
+    paddingHorizontal: DIMENSIONS.screenPadding,
   },
   categoryButton: {
-    marginRight: 0,
+    minWidth: 80,
+    marginRight: 8,
   },
   storeListContainer: {
-    paddingTop: 24,
+    flex: 1,
+    paddingTop: 12,
+  },
+  storeListContent: {
+    paddingBottom: 100,
   },
   storeListHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    marginBottom: 16,
+    paddingHorizontal: DIMENSIONS.screenPadding,
+    marginBottom: 8,
   },
   storeListTitle: {
-    fontSize: 18,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.gray[900],
   },
   emptyState: {
-    marginHorizontal: spacing.md,
+    marginHorizontal: DIMENSIONS.screenPadding,
   },
   emptyStateContent: {
     alignItems: 'center',
     paddingVertical: 32,
   },
   emptyStateTitle: {
-    fontSize: 18,
+    fontSize: fontSizes.lg,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: colors.gray[700],
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateDescription: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontSize: fontSizes.base,
+    color: colors.gray[500],
     textAlign: 'center',
     marginBottom: 24,
   },
