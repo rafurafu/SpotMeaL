@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { StoreRegistrationScreen } from '../screens/StoreRegistrationScreen';
+import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
+  ProfileEdit: undefined;
   Reservation: { store: Store };
   QRScan: { reservationId: string };
 };
@@ -160,6 +162,13 @@ export const AppNavigator = () => {
       <Stack.Screen 
         name="StoreRegistration" 
         component={StoreRegistrationScreen}
+        options={{ 
+          headerShown: false, // カスタムヘッダーを使用するため非表示
+        }}
+      />
+      <Stack.Screen 
+        name="ProfileEdit" 
+        component={ProfileEditScreen}
         options={{ 
           headerShown: false, // カスタムヘッダーを使用するため非表示
         }}
