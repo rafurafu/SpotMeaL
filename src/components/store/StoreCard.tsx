@@ -43,7 +43,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
           />
           {/* 報酬バッジ */}
           <View style={styles.rewardBadge}>
-            <Ionicons name="cash-outline" size={16} color={colors.warning} />
+            <Ionicons name="cash-outline" size={16} color={colors.warning[500]} />
             <Text style={styles.rewardText}>¥{store.currentReward}</Text>
           </View>
           {/* 利用可能状態 */}
@@ -68,7 +68,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
           {/* 評価と距離 */}
           <View style={styles.metaRow}>
             <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={16} color={colors.warning} />
+              <Ionicons name="star" size={16} color={colors.warning[500]} />
               <Text style={styles.ratingText}>{store.rating}</Text>
             </View>
             <View style={styles.distanceContainer}>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: colors.success,
+    backgroundColor: colors.success[500],
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryBadge: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.primary[500],
   },
   categoryText: {
     fontSize: 12,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   freePostsText: {
     fontSize: 12,
-    color: colors.success,
+    color: colors.success[500],
     fontWeight: '500',
     marginLeft: 4,
   },

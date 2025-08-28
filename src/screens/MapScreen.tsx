@@ -155,7 +155,7 @@ export const MapScreen: React.FC = () => {
       case 'ラーメン': return '#FF9800';
       case '寿司': return '#2196F3';
       case 'カフェ': return '#9C27B0';
-      default: return colors.primary;
+      default: return colors.primary[500];
     }
   };
 
@@ -224,12 +224,12 @@ export const MapScreen: React.FC = () => {
               style={styles.providerButton}
               onPress={() => setShowProviderMenu(!showProviderMenu)}
             >
-              <Ionicons name="layers" size={20} color={colors.primary} />
+              <Ionicons name="layers" size={20} color={colors.primary[500]} />
               <Text style={styles.providerButtonText}>{getProviderName(mapProvider)}</Text>
-              <Ionicons name="chevron-down" size={16} color={colors.primary} />
+              <Ionicons name="chevron-down" size={16} color={colors.primary[500]} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.locationButton}>
-              <Ionicons name="locate" size={24} color={colors.primary} />
+              <Ionicons name="locate" size={24} color={colors.primary[500]} />
             </TouchableOpacity>
           </View>
         </View>
@@ -240,7 +240,7 @@ export const MapScreen: React.FC = () => {
             style={[styles.providerMenuItem, mapProvider === PROVIDER_DEFAULT && styles.providerMenuItemActive]}
             onPress={() => handleProviderChange(PROVIDER_DEFAULT)}
           >
-            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_DEFAULT ? colors.primary : 'transparent'} />
+            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_DEFAULT ? colors.primary[500] : 'transparent'} />
             <Text style={[styles.providerMenuText, mapProvider === PROVIDER_DEFAULT && styles.providerMenuTextActive]}>
               デフォルト (無料)
             </Text>
@@ -249,7 +249,7 @@ export const MapScreen: React.FC = () => {
             style={[styles.providerMenuItem, mapProvider === PROVIDER_GOOGLE && styles.providerMenuItemActive]}
             onPress={() => handleProviderChange(PROVIDER_GOOGLE)}
           >
-            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_GOOGLE ? colors.primary : 'transparent'} />
+            <Ionicons name="checkmark" size={16} color={mapProvider === PROVIDER_GOOGLE ? colors.primary[500] : 'transparent'} />
             <Text style={[styles.providerMenuText, mapProvider === PROVIDER_GOOGLE && styles.providerMenuTextActive]}>
               Google Maps (有料)
             </Text>
@@ -292,7 +292,7 @@ export const MapScreen: React.FC = () => {
               <Text style={styles.storeCategory}>{selectedStore.category}</Text>
               <View style={styles.storeDetails}>
                 <View style={styles.ratingContainer}>
-                  <Ionicons name="star" size={14} color={colors.warning} />
+                  <Ionicons name="star" size={14} color={colors.warning[500]} />
                   <Text style={styles.rating}>{selectedStore.rating}</Text>
                 </View>
                 <Text style={styles.distance}>{selectedStore.distance}km</Text>
@@ -307,7 +307,7 @@ export const MapScreen: React.FC = () => {
           </View>
           
           <View style={styles.rewardInfo}>
-            <Ionicons name="diamond" size={16} color={colors.warning} />
+            <Ionicons name="diamond" size={16} color={colors.warning[500]} />
             <Text style={styles.rewardText}>¥{selectedStore.currentReward} 来店報酬</Text>
           </View>
 
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   providerButtonText: {
     fontSize: fontSizes.sm,
-    color: colors.primary,
+    color: colors.primary[500],
     marginHorizontal: 4,
     fontWeight: '500',
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.gray[100],
   },
   providerMenuItemActive: {
-    backgroundColor: colors.primary + '10',
+    backgroundColor: colors.primary[500] + '10',
   },
   providerMenuText: {
     fontSize: fontSizes.sm,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   providerMenuTextActive: {
-    color: colors.primary,
+    color: colors.primary[500],
     fontWeight: '600',
   },
   map: {
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   },
   storeCategory: {
     fontSize: fontSizes.sm,
-    color: colors.primary,
+    color: colors.primary[500],
     marginBottom: 8,
   },
   storeDetails: {
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.warning + '10',
+    backgroundColor: colors.warning[500] + '10',
     borderRadius: 8,
   },
   rewardText: {
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
     borderRadius: DIMENSIONS.buttonRadius,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   retryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: DIMENSIONS.buttonRadius,

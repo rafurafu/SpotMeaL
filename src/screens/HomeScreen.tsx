@@ -196,7 +196,7 @@ export const HomeScreen: React.FC = () => {
             <View style={styles.rewardInfo}>
               <Text style={styles.rewardTimeSlot}>{currentReward.timeSlot}</Text>
               <View style={styles.rewardAmount}>
-                <Ionicons name="diamond" size={20} color={colors.warning} />
+                <Ionicons name="diamond" size={20} color={colors.warning[500]} />
                 <Text style={styles.rewardValue}>¥{currentReward.amount}</Text>
                 <Text style={styles.rewardLabel}>来店報酬</Text>
               </View>
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   rewardTimeSlot: {
     fontSize: fontSizes.xs,
-    color: colors.primary,
+    color: colors.primary[500],
     marginBottom: 4,
   },
   rewardAmount: {
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   rewardBadge: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,

@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
+import { StoreRegistrationScreen } from '../screens/StoreRegistrationScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
@@ -20,6 +21,7 @@ import { colors, fontSizes } from '../utils/constants';
 export type RootStackParamList = {
   MainTabs: undefined;
   StoreDetail: { store: Store };
+  StoreRegistration: undefined;
   Reservation: { store: Store };
   QRScan: { reservationId: string };
 };
@@ -28,7 +30,7 @@ export type TabParamList = {
   Discover: undefined;
   Map: undefined;
   QRScan: undefined;
-  Store: undefined;
+  StoreRegistration: undefined;
   MyPage: undefined;
 };
 
@@ -58,13 +60,8 @@ const PlaceholderScreen = ({ title, description }: { title: string; description:
   </View>
 );
 
-// QRスキャン画面のプレースホルダー（実際の画面ができるまで）
-const QRScanPlaceholder = () => (
-  <PlaceholderScreen
-    title="QRスキャン"
-    description="来店確認用QRスキャン機能を実装予定"
-  />
-);
+// QRスキャン画面
+const QRScanTab = () => <QRScanScreen />;
 
 // タブナビゲーター
 const TabNavigator = () => {
@@ -84,8 +81,8 @@ const TabNavigator = () => {
             case 'QRScan':
               iconName = focused ? 'qr-code' : 'qr-code-outline';
               break;
-            case 'Store':
-              iconName = focused ? 'storefront' : 'storefront-outline';
+            case 'StoreRegistration':
+              iconName = focused ? 'add-circle' : 'add-circle-outline';
               break;
             case 'MyPage':
               iconName = focused ? 'person' : 'person-outline';
@@ -96,7 +93,7 @@ const TabNavigator = () => {
 
           return <Ionicons name={iconName} size={24} color={color} />;
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.primary[500],
         tabBarInactiveTintColor: colors.gray[400],
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
@@ -115,13 +112,13 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="QRScan" 
-        component={QRScanPlaceholder} 
+        component={QRScanTab} 
         options={{ tabBarLabel: 'QR' }} 
       />
       <Tab.Screen 
-        name="Store" 
-        component={EarningsScreen} 
-        options={{ tabBarLabel: '店舗' }} 
+        name="StoreRegistration" 
+        component={StoreRegistrationScreen} 
+        options={{ tabBarLabel: '店舗掲載' }} 
       />
       <Tab.Screen 
         name="MyPage" 
@@ -156,6 +153,13 @@ export const AppNavigator = () => {
       <Stack.Screen 
         name="StoreDetail" 
         component={StoreDetailScreen}
+        options={{ 
+          headerShown: false, // カスタムヘッダーを使用するため非表示
+        }}
+      />
+      <Stack.Screen 
+        name="StoreRegistration" 
+        component={StoreRegistrationScreen}
         options={{ 
           headerShown: false, // カスタムヘッダーを使用するため非表示
         }}
