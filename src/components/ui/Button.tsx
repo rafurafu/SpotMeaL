@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator 
-          color={variant === 'primary' ? colors.surface : colors.primary} 
+          color={variant === 'primary' ? colors.surface : colors.primary[500]} 
         />
       ) : (
         <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
   },
   secondary: {
     backgroundColor: colors.secondary,
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.primary[500],
   },
   small: {
     paddingHorizontal: 12,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
   outlineText: {
-    color: colors.primary,
+    color: colors.primary[500],
   },
   disabled: {
     opacity: 0.5,
