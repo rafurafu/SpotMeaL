@@ -21,24 +21,23 @@ import { signIn, signUp, signInWithGoogle, clearError } from '../store/slices/au
 
 interface LoginScreenProps {
   onAuthSuccess: () => void;
+  onSwitchToSignUp: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ 
+  onAuthSuccess, 
+  onSwitchToSignUp 
+}) => {
   const dispatch = useAppDispatch();
   const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
   
-  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
   const [errors, setErrors] = useState({
-    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -56,15 +55,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
 
   const validateForm = (): boolean => {
     const newErrors = {
-      name: '',
       email: '',
       password: '',
-      confirmPassword: '',
     };
-
-    if (!isLogin && !formData.name.trim()) {
-      newErrors.name = '名前を入力してください';
-    }
 
     if (!formData.email.trim()) {
       newErrors.email = 'メールアドレスを入力してください';
@@ -78,10 +71,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
       newErrors.password = 'パスワードは6文字以上で入力してください';
     }
 
-    if (!isLogin && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'パスワードが一致しません';
-    }
-
     setErrors(newErrors);
     return !Object.values(newErrors).some(error => error !== '');
   };
@@ -90,22 +79,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
     if (!validateForm()) return;
 
     try {
-      if (isLogin) {
-        const credentials: LoginCredentials = {
-          email: formData.email,
-          password: formData.password,
-        };
-        dispatch(signIn(credentials));
-      } else {
-        const credentials: SignUpCredentials = {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        };
-        dispatch(signUp(credentials));
-      }
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password,
+      };
+      dispatch(signIn(credentials));
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('Login error:', error);
     }
   };
 
@@ -122,22 +102,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
     if (errors[field as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-  };
-
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
-    setErrors({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
   };
 
   return (
@@ -159,23 +123,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
               />
             </View>
             <Text style={styles.title}>SPOTMEAL</Text>
-            <Text style={styles.subtitle}>
-              {isLogin ? 'アカウントにログイン' : '新規アカウント作成'}
-            </Text>
+            <Text style={styles.subtitle}>アカウントにログイン</Text>
           </View>
 
           <View style={styles.form}>
-            {!isLogin && (
-              <Input
-                label="名前"
-                placeholder="山田太郎"
-                value={formData.name}
-                onChangeText={(value) => updateFormData('name', value)}
-                error={errors.name}
-                autoCapitalize="words"
-              />
-            )}
-
             <Input
               label="メールアドレス"
               placeholder="example@email.com"
@@ -197,19 +148,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
               autoComplete="password"
             />
 
-            {!isLogin && (
-              <Input
-                label="パスワード確認"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChangeText={(value) => updateFormData('confirmPassword', value)}
-                error={errors.confirmPassword}
-                secureTextEntry
-              />
-            )}
-
             <Button
-              title={isLogin ? 'ログイン' : '新規登録'}
+              title="ログイン"
               onPress={handleSubmit}
               loading={loading}
               style={styles.submitButton}
@@ -233,12 +173,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthSuccess }) => {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {isLogin ? 'アカウントをお持ちでない方は' : '既にアカウントをお持ちの方は'}
+              アカウントをお持ちでない方は
             </Text>
-            <TouchableOpacity onPress={toggleMode}>
-              <Text style={styles.footerLink}>
-                {isLogin ? '新規登録' : 'ログイン'}
-              </Text>
+            <TouchableOpacity onPress={onSwitchToSignUp}>
+              <Text style={styles.footerLink}>新規登録</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
