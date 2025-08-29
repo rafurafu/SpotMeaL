@@ -3,7 +3,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
@@ -15,11 +15,15 @@ import { EarningsScreen } from '../screens/EarningsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import { LoginScreen } from '../screens/LoginScreen';
+import { AuthGuard } from '../components/auth/AuthGuard';
+import { useAppSelector } from '../hooks/redux';
 
 import { colors, fontSizes } from '../utils/constants';
 
 // 型定義
 export type RootStackParamList = {
+  Auth: undefined;
   MainTabs: undefined;
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
@@ -133,6 +137,20 @@ const TabNavigator = () => {
 
 // メインナビゲーター
 export const AppNavigator = () => {
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+
+  const handleAuthSuccess = () => {
+    // Navigation will be handled automatically by Redux state change
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary[500]} />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -147,47 +165,64 @@ export const AppNavigator = () => {
         },
       }}
     >
-      <Stack.Screen 
-        name="MainTabs" 
-        component={TabNavigator}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="StoreDetail" 
-        component={StoreDetailScreen}
-        options={{ 
-          headerShown: false, // カスタムヘッダーを使用するため非表示
-        }}
-      />
-      <Stack.Screen 
-        name="StoreRegistration" 
-        component={StoreRegistrationScreen}
-        options={{ 
-          headerShown: false, // カスタムヘッダーを使用するため非表示
-        }}
-      />
-      <Stack.Screen 
-        name="ProfileEdit" 
-        component={ProfileEditScreen}
-        options={{ 
-          headerShown: false, // カスタムヘッダーを使用するため非表示
-        }}
-      />
-      <Stack.Screen 
-        name="Reservation" 
-        component={ReservationScreen}
-        options={{ title: '予約' }}
-      />
-      <Stack.Screen 
-        name="QRScan" 
-        component={QRScanScreen}
-        options={{ title: 'QRスキャン' }}
-      />
+      {!isAuthenticated ? (
+        <Stack.Screen 
+          name="Auth" 
+          options={{ headerShown: false }}
+        >
+          {() => <LoginScreen onAuthSuccess={handleAuthSuccess} />}
+        </Stack.Screen>
+      ) : (
+        <>
+          <Stack.Screen 
+            name="MainTabs" 
+            component={TabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="StoreDetail" 
+            component={StoreDetailScreen}
+            options={{ 
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="StoreRegistration" 
+            component={StoreRegistrationScreen}
+            options={{ 
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="ProfileEdit" 
+            component={ProfileEditScreen}
+            options={{ 
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="Reservation" 
+            component={ReservationScreen}
+            options={{ title: '予約' }}
+          />
+          <Stack.Screen 
+            name="QRScan" 
+            component={QRScanScreen}
+            options={{ title: 'QRスキャン' }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
   tabBar: {
     backgroundColor: colors.white,
     borderTopWidth: 0,
