@@ -17,7 +17,7 @@ import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
 import { LoginCredentials, SignUpCredentials } from '../types/auth';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { signIn, signUp, signInWithGoogle, clearError } from '../store/slices/authSlice';
+import { signIn, signUp, signInWithGoogle, clearError, setUser } from '../store/slices/authSlice';
 
 interface LoginScreenProps {
   onAuthSuccess: () => void;
@@ -97,6 +97,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
+  const handleTestLogin = () => {
+    const testUser = {
+      id: 'test-user',
+      email: 'test@example.com',
+      name: 'テストユーザー',
+    };
+    dispatch(setUser(testUser));
+  };
+
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field as keyof typeof errors]) {
@@ -168,6 +177,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               loading={loading}
               style={styles.googleButton}
               textStyle={styles.googleButtonText}
+            />
+
+            <Button
+              title="テスト用 - ホーム画面へ"
+              onPress={handleTestLogin}
+              variant="outline"
+              style={styles.testButton}
+              textStyle={styles.testButtonText}
             />
           </View>
 
@@ -249,6 +266,13 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: colors.gray[700],
+  },
+  testButton: {
+    borderColor: colors.primary[200],
+    marginTop: spacing.md,
+  },
+  testButtonText: {
+    color: colors.primary[600],
   },
   footer: {
     flexDirection: 'row',
