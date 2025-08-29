@@ -15,7 +15,7 @@ import { EarningsScreen } from '../screens/EarningsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
-import { LoginScreen } from '../screens/LoginScreen';
+import { AuthNavigator } from './AuthNavigator';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { useAppSelector } from '../hooks/redux';
 
@@ -24,6 +24,8 @@ import { colors, fontSizes } from '../utils/constants';
 // 型定義
 export type RootStackParamList = {
   Auth: undefined;
+  Login: undefined;
+  SignUp: undefined;
   MainTabs: undefined;
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
@@ -170,7 +172,7 @@ export const AppNavigator = () => {
           name="Auth" 
           options={{ headerShown: false }}
         >
-          {() => <LoginScreen onAuthSuccess={handleAuthSuccess} />}
+          {() => <AuthNavigator onAuthSuccess={handleAuthSuccess} />}
         </Stack.Screen>
       ) : (
         <>
