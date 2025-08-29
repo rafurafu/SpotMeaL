@@ -15,6 +15,8 @@ import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { signOut } from '../store/slices/authSlice';
 
 type RootStackParamList = {
   ProfileEdit: undefined;
@@ -39,6 +41,9 @@ interface MenuItem {
 
 export default function ProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  
   const userStats: UserStats = {
     totalVisits: 24,
     totalRewards: 3200,
@@ -72,7 +77,13 @@ export default function ProfileScreen(): React.JSX.Element {
       'ログアウトしますか？',
       [
         { text: 'キャンセル', style: 'cancel' },
-        { text: 'ログアウト', style: 'destructive', onPress: () => {} },
+        { 
+          text: 'ログアウト', 
+          style: 'destructive', 
+          onPress: () => {
+            dispatch(signOut());
+          }
+        },
       ]
     );
   };
@@ -153,8 +164,8 @@ export default function ProfileScreen(): React.JSX.Element {
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>田中 太郎</Text>
-              <Text style={styles.userEmail}>tanaka@example.com</Text>
+              <Text style={styles.userName}>{user?.name || 'ユーザー名'}</Text>
+              <Text style={styles.userEmail}>{user?.email || 'メールアドレス'}</Text>
               <TouchableOpacity
                 style={styles.editProfileButton}
                 onPress={handleEditProfile}
