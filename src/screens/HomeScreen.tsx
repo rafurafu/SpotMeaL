@@ -25,6 +25,10 @@ type RootStackParamList = {
   Home: undefined;
   StoreDetail: { store: Store };
   Reservation: { store: Store };
+  Profile: undefined;
+  Favorites: undefined;
+  StoreRegistration: undefined;
+  QRScan: { reservationId: string };
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -171,9 +175,10 @@ export const HomeScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 固定ヘッダー部分 */}
-      <View style={styles.fixedSection}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeAreaTop}>
+        {/* 固定ヘッダー部分 */}
+        <View style={styles.fixedSection}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -187,8 +192,23 @@ export const HomeScreen: React.FC = () => {
               <Text style={styles.appTitle}>SpotMeal</Text>
               <Text style={styles.subtitle}>新しいお店を発見してお得に楽しもう</Text>
             </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => navigation.navigate('Profile')}
+              >
+                <Ionicons name="person-outline" size={24} color={colors.gray[600]} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => navigation.navigate('Favorites')}
+              >
+                <Ionicons name="heart-outline" size={24} color={colors.gray[600]} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
+
 
         {/* 現在の報酬情報 */}
         <Card style={styles.rewardCard}>
@@ -286,13 +306,61 @@ export const HomeScreen: React.FC = () => {
             </Card>
           </ScrollView>
         )}
+        </View>
+      </SafeAreaView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity 
+          style={styles.bottomNavItem}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Ionicons name="home" size={24} color={colors.primary[500]} />
+          <Text style={styles.bottomNavText}>ホーム</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.bottomNavItem}
+          onPress={() => navigation.navigate('StoreRegistration')}
+        >
+          <Ionicons name="add-circle-outline" size={24} color={colors.gray[500]} />
+          <Text style={styles.bottomNavText}>店舗掲載</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.bottomNavItem}
+          onPress={() => navigation.navigate('QRScan', { reservationId: 'demo' })}
+        >
+          <Ionicons name="qr-code-outline" size={24} color={colors.gray[500]} />
+          <Text style={styles.bottomNavText}>QRスキャン</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.bottomNavItem}
+          onPress={() => navigation.navigate('Favorites')}
+        >
+          <Ionicons name="heart-outline" size={24} color={colors.gray[500]} />
+          <Text style={styles.bottomNavText}>お気に入り</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.bottomNavItem}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Ionicons name="person-outline" size={24} color={colors.gray[500]} />
+          <Text style={styles.bottomNavText}>プロフィール</Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: colors.gray[50],
+  },
+  safeAreaTop: {
     flex: 1,
     backgroundColor: colors.gray[50],
   },
@@ -317,6 +385,42 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  bottomNavigation: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    paddingTop: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 34,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  bottomNavText: {
+    fontSize: fontSizes.xs,
+    color: colors.gray[500],
+    fontWeight: '500',
+    marginTop: 4,
   },
   appTitle: {
     fontSize: fontSizes.xl,
@@ -414,7 +518,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   storeListContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   storeListHeader: {
     paddingHorizontal: DIMENSIONS.screenPadding,

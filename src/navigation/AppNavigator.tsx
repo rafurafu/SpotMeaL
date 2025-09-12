@@ -1,8 +1,6 @@
 // src/navigation/AppNavigator.tsx
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
@@ -12,7 +10,6 @@ import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
-import { MapScreen } from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import { AuthNavigator } from './AuthNavigator';
@@ -26,20 +23,14 @@ export type RootStackParamList = {
   Auth: undefined;
   Login: undefined;
   SignUp: undefined;
-  MainTabs: undefined;
+  Home: undefined;
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
   ProfileEdit: undefined;
   Reservation: { store: Store };
   QRScan: { reservationId: string };
-};
-
-export type TabParamList = {
-  Discover: undefined;
-  Map: undefined;
-  QRScan: undefined;
-  StoreRegistration: undefined;
-  MyPage: undefined;
+  Profile: undefined;
+  Favorites: undefined;
 };
 
 interface Store {
@@ -57,85 +48,6 @@ interface Store {
 }
 
 const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<TabParamList>();
-
-// プレースホルダー画面コンポーネント
-const PlaceholderScreen = ({ title, description }: { title: string; description: string }) => (
-  <View style={styles.placeholderScreen}>
-    <Ionicons name="construct" size={64} color={colors.gray[300]} />
-    <Text style={styles.placeholderTitle}>{title}</Text>
-    <Text style={styles.placeholderText}>{description}</Text>
-  </View>
-);
-
-// QRスキャン画面
-const QRScanTab = () => <QRScanScreen />;
-
-// タブナビゲーター
-const TabNavigator = () => {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          switch (route.name) {
-            case 'Discover':
-              iconName = focused ? 'search' : 'search-outline';
-              break;
-            case 'Map':
-              iconName = focused ? 'map' : 'map-outline';
-              break;
-            case 'QRScan':
-              iconName = focused ? 'qr-code' : 'qr-code-outline';
-              break;
-            case 'StoreRegistration':
-              iconName = focused ? 'add-circle' : 'add-circle-outline';
-              break;
-            case 'MyPage':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
-            default:
-              iconName = 'ellipse';
-          }
-
-          return <Ionicons name={iconName} size={24} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary[500],
-        tabBarInactiveTintColor: colors.gray[400],
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen 
-        name="Discover" 
-        component={HomeScreen} 
-        options={{ tabBarLabel: '発見' }} 
-      />
-      <Tab.Screen 
-        name="Map" 
-        component={MapScreen} 
-        options={{ tabBarLabel: 'マップ' }} 
-      />
-      <Tab.Screen 
-        name="QRScan" 
-        component={QRScanTab} 
-        options={{ tabBarLabel: 'QR' }} 
-      />
-      <Tab.Screen 
-        name="StoreRegistration" 
-        component={StoreRegistrationScreen} 
-        options={{ tabBarLabel: '店舗掲載' }} 
-      />
-      <Tab.Screen 
-        name="MyPage" 
-        component={ProfileScreen} 
-        options={{ tabBarLabel: 'マイページ' }} 
-      />
-    </Tab.Navigator>
-  );
-};
 
 // メインナビゲーター
 export const AppNavigator = () => {
@@ -177,8 +89,8 @@ export const AppNavigator = () => {
       ) : (
         <>
           <Stack.Screen 
-            name="MainTabs" 
-            component={TabNavigator}
+            name="Home" 
+            component={HomeScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen 
@@ -196,8 +108,22 @@ export const AppNavigator = () => {
             }}
           />
           <Stack.Screen 
+            name="Profile" 
+            component={ProfileScreen}
+            options={{ 
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
             name="ProfileEdit" 
             component={ProfileEditScreen}
+            options={{ 
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="Favorites" 
+            component={FavoritesScreen}
             options={{ 
               headerShown: false,
             }}
@@ -224,47 +150,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
-  },
-  tabBar: {
-    backgroundColor: colors.white,
-    borderTopWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 16,
-    paddingBottom: 8,
-    paddingTop: 12,
-    height: 80,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  tabBarLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  placeholderScreen: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.gray[50],
-    paddingHorizontal: 32,
-  },
-  placeholderTitle: {
-    fontSize: fontSizes.xl,
-    fontWeight: '600',
-    color: colors.gray[600],
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  placeholderText: {
-    fontSize: fontSizes.base,
-    color: colors.gray[500],
-    textAlign: 'center',
-    lineHeight: 24,
   },
 });

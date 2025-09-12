@@ -53,7 +53,7 @@ export default function QRScannerScreen({ navigation, route }: Props): React.JSX
                 [
                   {
                     text: 'OK',
-                    onPress: () => navigation.navigate('MainTabs'),
+                    onPress: () => navigation.navigate('Home'),
                   },
                 ]
               );
@@ -78,7 +78,7 @@ export default function QRScannerScreen({ navigation, route }: Props): React.JSX
             {
               text: '詳細表示',
               onPress: () => {
-                navigation.navigate('MainTabs');
+                navigation.navigate('Home');
               },
             },
           ]

@@ -7,6 +7,7 @@ export const DIMENSIONS = {
   height: SCREEN_HEIGHT,
   screenPadding: 16,
   buttonRadius: 8,
+  cardRadius: 12,
 };
 
 export const fontSizes = {

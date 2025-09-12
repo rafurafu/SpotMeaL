@@ -13,21 +13,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
 
-type TabParamList = {
-  Discover: undefined;
-  Map: undefined;
-  QRScan: undefined;
+type RootStackParamList = {
+  Home: undefined;
   StoreRegistration: undefined;
-  MyPage: undefined;
+  Profile: undefined;
 };
 
-type StoreRegistrationScreenNavigationProp = BottomTabNavigationProp<TabParamList, 'StoreRegistration'>;
+type StoreRegistrationScreenNavigationProp = StackNavigationProp<RootStackParamList, 'StoreRegistration'>;
 
 interface StoreRegistrationForm {
   name: string;
@@ -55,7 +53,7 @@ export const StoreRegistrationScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleBack = () => {
-    navigation.navigate('Discover');
+    navigation.navigate('Home');
   };
 
   const handleInputChange = (field: keyof StoreRegistrationForm, value: string) => {
@@ -123,7 +121,7 @@ export const StoreRegistrationScreen: React.FC = () => {
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Discover'),
+            onPress: () => navigation.navigate('Home'),
           },
         ]
       );
