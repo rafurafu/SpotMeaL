@@ -1,5 +1,5 @@
 // src/screens/HomeScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import { StoreCard } from '../components/store/StoreCard';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
+import { useStoreContext, Store } from '../contexts/StoreContext';
 
 // Navigation types
 type RootStackParamList = {
@@ -32,20 +34,6 @@ type RootStackParamList = {
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-
-interface Store {
-  id: string;
-  name: string;
-  category: string;
-  image: string;
-  description: string;
-  address: string;
-  rating: number;
-  distance: number;
-  currentReward: number;
-  isAvailable: boolean;
-  freePostsRemaining: number;
-}
 
 // 現在の時間帯に基づく報酬を取得する関数
 const getCurrentReward = (): { amount: number; timeSlot: string } => {
@@ -63,71 +51,46 @@ const getCurrentReward = (): { amount: number; timeSlot: string } => {
   }
 };
 
-// モックデータ
-const mockStores: Store[] = [
-  {
-    id: '1',
-    name: '和食処 さくら',
-    category: '和食',
-    image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400',
-    description: 'こだわりの食材を使った季節の和食をお楽しみください。落ち着いた雰囲気の店内でゆっくりとお食事をどうぞ。',
-    address: '東京都渋谷区神宮前1-2-3',
-    rating: 4.5,
-    distance: 0.3,
-    currentReward: getCurrentReward().amount,
-    isAvailable: true,
-    freePostsRemaining: 2,
-  },
-  {
-    id: '2',
-    name: 'ラーメン横丁',
-    category: 'ラーメン',
-    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
-    description: '濃厚豚骨スープが自慢のラーメン店。深夜まで営業しているので、遅い時間でもお楽しみいただけます。',
-    address: '東京都新宿区歌舞伎町2-1-5',
-    rating: 4.2,
-    distance: 0.8,
-    currentReward: getCurrentReward().amount,
-    isAvailable: true,
-    freePostsRemaining: 1,
-  },
-  {
-    id: '3',
-    name: '寿司 一心',
-    category: '寿司',
-    image: 'https://images.unsplash.com/photo-1563612116625-3012372fccce?w=400',
-    description: '新鮮な魚介を使った本格江戸前寿司。職人の技が光る逸品をカウンターでお楽しみください。',
-    address: '東京都中央区銀座4-5-6',
-    rating: 4.8,
-    distance: 1.2,
-    currentReward: getCurrentReward().amount,
-    isAvailable: true,
-    freePostsRemaining: 3,
-  },
-  {
-    id: '4',
-    name: 'カフェ・ド・パリ',
-    category: 'カフェ',
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
-    description: 'パリの街角にあるような雰囲気のカフェ。こだわりのコーヒーと手作りスイーツをご提供。',
-    address: '東京都港区表参道3-4-7',
-    rating: 4.3,
-    distance: 0.5,
-    currentReward: getCurrentReward().amount,
-    isAvailable: true,
-    freePostsRemaining: 0,
-  },
-];
-
 const categories = ['全て', '和食', 'ラーメン', '寿司', 'カフェ', 'イタリアン'];
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { stores } = useStoreContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('全て');
-  const [stores, setStores] = useState<Store[]>(mockStores);
   const [refreshing, setRefreshing] = useState(false);
   const [currentReward, setCurrentReward] = useState(getCurrentReward());
+  
+  // スクロールアニメーション用
+  const scrollY = useRef(new Animated.Value(0)).current;
+  
+  // ヘッダー全体（ロゴ・アプリ名・サブタイトル）の透明度
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  
+  // ヘッダー全体の高さ
+  const headerContentHeight = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [80, 0],
+    extrapolate: 'clamp',
+  });
+  
+  // 報酬カードの透明度
+  const hideableOpacity = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  
+  // 報酬カードの高さ
+  const rewardCardHeight = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [80, 0],
+    extrapolate: 'clamp',
+  });
 
   // 店舗選択時のハンドラー
   const handleStoreSelect = (store: Store) => {
@@ -179,85 +142,101 @@ export const HomeScreen: React.FC = () => {
       <SafeAreaView style={styles.safeAreaTop}>
         {/* 固定ヘッダー部分 */}
         <View style={styles.fixedSection}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../assets/images/icon.png')}
-                style={styles.logoImage}
-              />
-            </View>
-            <View style={styles.headerText}>
-              <Text style={styles.appTitle}>SpotMeal</Text>
-              <Text style={styles.subtitle}>新しいお店を発見してお得に楽しもう</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => navigation.navigate('Profile')}
-              >
-                <Ionicons name="person-outline" size={24} color={colors.gray[600]} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => navigation.navigate('Favorites')}
-              >
-                <Ionicons name="heart-outline" size={24} color={colors.gray[600]} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-
-        {/* 現在の報酬情報 */}
-        <Card style={styles.rewardCard}>
-          <View style={styles.rewardHeader}>
-            <View style={styles.rewardInfo}>
-              <Text style={styles.rewardTimeSlot}>{currentReward.timeSlot}</Text>
-              <View style={styles.rewardAmount}>
-                <Ionicons name="diamond" size={20} color={colors.warning[500]} />
-                <Text style={styles.rewardValue}>¥{currentReward.amount}</Text>
-                <Text style={styles.rewardLabel}>来店報酬</Text>
+          {/* Header */}
+          <Animated.View style={[
+            styles.header,
+            { 
+              height: headerContentHeight,
+              opacity: headerOpacity,
+              overflow: 'hidden'
+            }
+          ]}>
+            <View style={styles.headerContent}>
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={require('../../assets/images/icon.png')}
+                  style={styles.logoImage}
+                />
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.appTitle}>
+                  SpotMeal
+                </Text>
+                <Text style={styles.subtitle}>
+                  新しいお店を発見してお得に楽しもう
+                </Text>
+              </View>
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  style={styles.headerButton}
+                  onPress={() => navigation.navigate('Profile')}
+                >
+                  <Ionicons name="person-outline" size={24} color={colors.gray[600]} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.headerButton}
+                  onPress={() => navigation.navigate('Favorites')}
+                >
+                  <Ionicons name="heart-outline" size={24} color={colors.gray[600]} />
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.rewardBadge}>
-              <Text style={styles.rewardBadgeText}>現在</Text>
+          </Animated.View>
+
+          {/* 現在の報酬情報 */}
+          <Animated.View style={{ 
+            height: rewardCardHeight, 
+            opacity: hideableOpacity,
+            overflow: 'hidden'
+          }}>
+            <Card style={styles.rewardCard}>
+              <View style={styles.rewardHeader}>
+                <View style={styles.rewardInfo}>
+                  <Text style={styles.rewardTimeSlot}>{currentReward.timeSlot}</Text>
+                  <View style={styles.rewardAmount}>
+                    <Ionicons name="diamond" size={20} color={colors.warning[500]} />
+                    <Text style={styles.rewardValue}>¥{currentReward.amount}</Text>
+                    <Text style={styles.rewardLabel}>来店報酬</Text>
+                  </View>
+                </View>
+                <View style={styles.rewardBadge}>
+                  <Text style={styles.rewardBadgeText}>現在</Text>
+                </View>
+              </View>
+            </Card>
+          </Animated.View>
+
+          {/* 検索バー */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search" size={20} color={colors.gray[400]} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="店名やカテゴリで検索"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={colors.gray[400]}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color={colors.gray[400]} />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
-        </Card>
 
-        {/* 検索バー */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color={colors.gray[400]} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="店名やカテゴリで検索"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor={colors.gray[400]}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.gray[400]} />
-              </TouchableOpacity>
-            )}
+          {/* カテゴリフィルター */}
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>カテゴリ</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScrollContent}
+            >
+              {categories.map(renderCategoryButton)}
+            </ScrollView>
           </View>
         </View>
-
-        {/* カテゴリフィルター */}
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>カテゴリ</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryScrollContent}
-          >
-            {categories.map(renderCategoryButton)}
-          </ScrollView>
-        </View>
-      </View>
 
       {/* スクロール可能な店舗リスト部分 */}
       <View style={styles.storeListContainer}>
@@ -277,6 +256,11 @@ export const HomeScreen: React.FC = () => {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
           />
         ) : (
           <ScrollView 
@@ -284,6 +268,11 @@ export const HomeScreen: React.FC = () => {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
           >
             <Card style={styles.emptyState}>
               <View style={styles.emptyStateContent}>

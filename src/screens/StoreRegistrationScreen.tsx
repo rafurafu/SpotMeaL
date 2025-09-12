@@ -17,6 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
+import { useStoreContext } from '../contexts/StoreContext';
 import * as ImagePicker from 'expo-image-picker';
 
 type RootStackParamList = {
@@ -32,7 +33,7 @@ interface StoreRegistrationForm {
   category: string;
   description: string;
   address: string;
-  image: string;
+  image: any;
   contactEmail: string;
   contactPhone: string;
 }
@@ -41,12 +42,13 @@ const categories = ['和食', 'ラーメン', '寿司', 'カフェ', 'イタリ�
 
 export const StoreRegistrationScreen: React.FC = () => {
   const navigation = useNavigation<StoreRegistrationScreenNavigationProp>();
+  const { addStore } = useStoreContext();
   const [form, setForm] = useState<StoreRegistrationForm>({
     name: '',
     category: categories[0],
     description: '',
     address: '',
-    image: '',
+    image: null,
     contactEmail: '',
     contactPhone: '',
   });
@@ -79,7 +81,7 @@ export const StoreRegistrationScreen: React.FC = () => {
     });
 
     if (!result.canceled && result.assets[0]) {
-      handleInputChange('image', result.assets[0].uri);
+      handleInputChange('image', { uri: result.assets[0].uri });
     }
   };
 
@@ -112,12 +114,18 @@ export const StoreRegistrationScreen: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // TODO: APIに送信する処理
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 新しい店舗を追加
+      addStore({
+        name: form.name,
+        category: form.category,
+        description: form.description,
+        address: form.address,
+        image: form.image,
+      });
       
       Alert.alert(
-        '掲載申請完了',
-        '店舗の掲載申請が完了しました。審査後、掲載開始のご連絡をいたします。',
+        '店舗掲載完了',
+        '店舗が正常に掲載されました！',
         [
           {
             text: 'OK',
@@ -126,7 +134,7 @@ export const StoreRegistrationScreen: React.FC = () => {
         ]
       );
     } catch (error) {
-      Alert.alert('エラー', '申請の送信に失敗しました。もう一度お試しください。');
+      Alert.alert('エラー', '店舗の掲載に失敗しました。もう一度お試しください。');
     } finally {
       setIsSubmitting(false);
     }
@@ -139,7 +147,7 @@ export const StoreRegistrationScreen: React.FC = () => {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.gray[900]} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>店舗掲載申請</Text>
+        <Text style={styles.headerTitle}>店舗掲載</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -152,7 +160,7 @@ export const StoreRegistrationScreen: React.FC = () => {
               <Text style={styles.infoTitle}>店舗掲載について</Text>
             </View>
             <Text style={styles.infoText}>
-              申請いただいた内容を審査の上、掲載させていただきます。審査結果は1〜3営業日以内にご連絡いたします。
+              こちらのフォームから新しい店舗を掲載できます。入力した情報は即座にアプリに反映されます。
             </Text>
           </Card>
 
@@ -246,7 +254,7 @@ export const StoreRegistrationScreen: React.FC = () => {
                 activeOpacity={0.7}
               >
                 {form.image ? (
-                  <Image source={{ uri: form.image }} style={styles.uploadedImage} />
+                  <Image source={form.image} style={styles.uploadedImage} />
                 ) : (
                   <View style={styles.imageUploadPlaceholder}>
                     <Ionicons name="camera" size={32} color={colors.primary[500]} />
@@ -298,10 +306,10 @@ export const StoreRegistrationScreen: React.FC = () => {
               <Text style={styles.noticeTitle}>注意事項</Text>
             </View>
             <View style={styles.noticeList}>
-              <Text style={styles.noticeItem}>• 審査には1〜3営業日お時間をいただきます</Text>
-              <Text style={styles.noticeItem}>• 掲載基準を満たさない場合、お断りする場合があります</Text>
-              <Text style={styles.noticeItem}>• 虚偽の情報での申請は禁止されています</Text>
-              <Text style={styles.noticeItem}>• 掲載後は定期的な情報更新をお願いします</Text>
+              <Text style={styles.noticeItem}>• 入力した情報は即座にアプリに反映されます</Text>
+              <Text style={styles.noticeItem}>• 店舗の写真は必須項目です</Text>
+              <Text style={styles.noticeItem}>• 正確な情報を入力してください</Text>
+              <Text style={styles.noticeItem}>• 不適切な内容の投稿は削除される場合があります</Text>
             </View>
           </Card>
         </View>
@@ -312,7 +320,7 @@ export const StoreRegistrationScreen: React.FC = () => {
       {/* 申請ボタン */}
       <View style={styles.submitButtonContainer}>
         <Button
-          title={isSubmitting ? '申請中...' : '掲載申請を送信'}
+          title={isSubmitting ? '掲載中...' : '店舗を掲載する'}
           onPress={handleSubmit}
           variant="primary"
           size="large"

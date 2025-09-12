@@ -15,7 +15,7 @@ interface Store {
   id: string;
   name: string;
   category: string;
-  image: string;
+  image: any; // require()で取得した画像リソース
   description: string;
   address: string;
   rating: number;
@@ -37,7 +37,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
       <TouchableOpacity onPress={() => onPress(store)} activeOpacity={0.8}>
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: store.image }}
+            source={store.image}
             style={styles.storeImage}
             resizeMode="cover"
           />
