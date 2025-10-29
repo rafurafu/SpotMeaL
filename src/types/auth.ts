@@ -8,6 +8,10 @@ export interface AuthUser {
   bio?: string;
   provider: 'email' | 'google';
   favorites: string[];
+  // 統計情報
+  totalVisits?: number;        // 総来店回数
+  totalRewards?: number;       // 総獲得報酬（円）
+  thisMonthVisits?: number;    // 今月の来店回数
 }
 
 export interface LoginCredentials {
