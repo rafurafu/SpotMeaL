@@ -7,12 +7,12 @@ import { getStorage } from 'firebase/storage';
 // プロジェクト名: SpotMeaL
 // プロジェクトID: spotmeal-fe4a2
 const firebaseConfig = {
-  apiKey: "AIzaSyD0aUv8mBBgjc18lZZGY4GNjW3WwbkO-Pc",
-  authDomain: "spotmeal-fe4a2.firebaseapp.com",
-  projectId: "spotmeal-fe4a2",
-  storageBucket: "spotmeal-fe4a2.firebasestorage.app",
-  messagingSenderId: "912211392523",
-  appId: "1:912211392523:web:46f777b5c0333f561f6f0e"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Firebaseアプリの初期化
