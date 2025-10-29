@@ -154,7 +154,7 @@ SpotMeal/
 
 1. **リポジトリのクローン**
    ```bash
-   git clone https://github.com/username/spotmeal.git
+   git clone https://github.com/rafurafu/spotmeal.git
    cd spotmeal
    ```
 
@@ -199,12 +199,6 @@ SpotMeal/
 
 **プロジェクトオーナー**: [daisuke]  
 **連絡先**: [bukbjrafu@gmail.com]
-
----
-
-## 🤝 コントリビューション
-
-現在は個人開発プロジェクトのため、コントリビューションは受け付けておりません。
 
 ---
 

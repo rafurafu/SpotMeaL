@@ -17,6 +17,8 @@ import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { clearError, setUser, setLoading, setError } from '../store/slices/authSlice';
+import { registerWithEmail, loginWithGoogle } from '../services/authService';
+import { createUserDocument } from '../services/userService';
 
 interface SignUpScreenProps {
   onAuthSuccess: () => void;
@@ -105,11 +107,25 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
     dispatch(setLoading(true));
     try {
-      // ローカル登録シミュレーション
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Firebase Authenticationでユーザー登録
+      const userCredential = await registerWithEmail(
+        formData.email.trim(),
+        formData.password
+      );
 
+      const firebaseUser = userCredential.user;
+
+      // Firestoreにユーザー情報を保存
+      await createUserDocument(
+        firebaseUser.uid,
+        formData.email.trim(),
+        formData.name.trim(),
+        'email'
+      );
+
+      // Reduxストアにユーザー情報を保存
       const user = {
-        id: 'user-' + Date.now(),
+        id: firebaseUser.uid,
         email: formData.email.trim(),
         name: formData.name.trim(),
         provider: 'email' as const,
@@ -117,8 +133,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       };
       dispatch(setUser(user));
       Alert.alert('登録完了', 'アカウントが作成されました！');
-    } catch (error) {
-      dispatch(setError('登録に失敗しました'));
+    } catch (error: any) {
+      dispatch(setError(error.message || '登録に失敗しました'));
     } finally {
       dispatch(setLoading(false));
     }
@@ -127,20 +143,32 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const handleGoogleSignUp = async () => {
     dispatch(setLoading(true));
     try {
-      // Googleログインシミュレーション
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Googleログイン（React NativeではsignInWithPopupは使えないため、代替実装が必要）
+      // TODO: React Native用のGoogle認証（expo-auth-sessionなど）を実装
+      const userCredential = await loginWithGoogle();
+      const firebaseUser = userCredential.user;
 
+      // Firestoreにユーザー情報を保存
+      await createUserDocument(
+        firebaseUser.uid,
+        firebaseUser.email || '',
+        firebaseUser.displayName || 'Google User',
+        'google',
+        firebaseUser.photoURL || undefined
+      );
+
+      // Reduxストアにユーザー情報を保存
       const user = {
-        id: 'google-user-' + Date.now(),
-        email: 'google.user@gmail.com',
-        name: 'Google User',
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        name: firebaseUser.displayName || 'Google User',
         provider: 'google' as const,
         favorites: [],
       };
       dispatch(setUser(user));
       Alert.alert('登録完了', 'Googleアカウントで登録しました！');
-    } catch (error) {
-      dispatch(setError('Google登録に失敗しました'));
+    } catch (error: any) {
+      dispatch(setError(error.message || 'Google登録に失敗しました'));
     } finally {
       dispatch(setLoading(false));
     }
