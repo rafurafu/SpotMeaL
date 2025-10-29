@@ -25,8 +25,8 @@ export interface Post {
   userPhotoURL?: string;
   title: string;
   description: string;
-  imageUrl: string; // Cloudinaryの画像URL
-  imagePublicId: string; // Cloudinaryのpublic ID
+  imageUrl: string; // ローカル画像のURL
+  localImagePath: string; // ローカルファイルシステムのパス
   location?: {
     name: string;
     address: string;

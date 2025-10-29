@@ -16,7 +16,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
 import { useAppSelector } from '../hooks/redux';
-import { uploadImageToCloudinary } from '../services/imageService';
+import { saveImageToLocal } from '../services/imageService';
 import { createPost } from '../services/postService';
 
 export const CreatePostScreen: React.FC = () => {
@@ -102,8 +102,8 @@ export const CreatePostScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      // 1. Cloudinaryに画像をアップロード
-      const imageResult = await uploadImageToCloudinary(imageUri, 'spotmeal-posts');
+      // 1. ローカルに画像を保存
+      const imageResult = await saveImageToLocal(imageUri, 'posts');
 
       // 2. Firestoreに投稿データを保存
       const postId = await createPost({
@@ -113,7 +113,7 @@ export const CreatePostScreen: React.FC = () => {
         title: title.trim(),
         description: description.trim(),
         imageUrl: imageResult.url,
-        imagePublicId: imageResult.publicId,
+        localImagePath: imageResult.localPath,
         location: locationName.trim()
           ? {
               name: locationName.trim(),
@@ -227,14 +227,6 @@ export const CreatePostScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>
-              ⚠️ この機能を使用する前に、Cloudinaryの設定を完了してください
-            </Text>
-            <Text style={styles.infoText}>
-              設定方法: src/config/cloudinary.ts を編集
-            </Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -318,17 +310,5 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.lg,
-  },
-  infoBox: {
-    backgroundColor: colors.warning[50],
-    borderLeftWidth: 4,
-    borderLeftColor: colors.warning[500],
-    padding: spacing.md,
-    borderRadius: 8,
-  },
-  infoText: {
-    fontSize: fontSizes.sm,
-    color: colors.warning[800],
-    marginBottom: spacing.xs,
   },
 });
