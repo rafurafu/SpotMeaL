@@ -11,12 +11,14 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Button } from '../components/ui/Button';
+
+import { Button } from '../components/ui/Button';import { Ionicons } from '@expo/vector-icons';
 import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { clearError, setUser, setLoading, setError } from '../store/slices/authSlice';
+import { loginWithEmail, loginWithGoogle } from '../services/authService';
+import { getUserDocument } from '../services/userService';
 
 interface LoginScreenProps {
   onAuthSuccess: () => void;
@@ -79,20 +81,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     dispatch(setLoading(true));
     try {
-      // ローカル認証シミュレーション
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Firebase Authenticationでログイン
+      const userCredential = await loginWithEmail(
+        formData.email.trim(),
+        formData.password
+      );
 
+      const firebaseUser = userCredential.user;
+
+      // Firestoreからユーザー情報を取得
+      const userDoc = await getUserDocument(firebaseUser.uid);
+
+      // Reduxストアにユーザー情報を保存
+      const provider = userDoc?.provider || 'email';
       const user = {
-        id: 'user-' + Date.now(),
-        email: formData.email,
-        name: formData.email.split('@')[0],
-        provider: 'email' as const,
-        favorites: [],
+        id: firebaseUser.uid,
+        email: firebaseUser.email || formData.email,
+        name: userDoc?.displayName || firebaseUser.displayName || formData.email.split('@')[0],
+        provider: provider as 'email' | 'google',
+        favorites: userDoc?.favorites || [],
       };
       dispatch(setUser(user));
       Alert.alert('ログイン成功', 'ようこそ！');
-    } catch (error) {
-      dispatch(setError('ログインに失敗しました'));
+    } catch (error: any) {
+      dispatch(setError(error.message || 'ログインに失敗しました'));
     } finally {
       dispatch(setLoading(false));
     }
@@ -101,20 +113,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleGoogleSignIn = async () => {
     dispatch(setLoading(true));
     try {
-      // Googleログインシミュレーション
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Googleログイン（React NativeではsignInWithPopupは使えないため、代替実装が必要）
+      // TODO: React Native用のGoogle認証（expo-auth-sessionなど）を実装
+      const userCredential = await loginWithGoogle();
+      const firebaseUser = userCredential.user;
 
+      // Firestoreからユーザー情報を取得
+      const userDoc = await getUserDocument(firebaseUser.uid);
+
+      // Reduxストアにユーザー情報を保存
       const user = {
-        id: 'google-user-' + Date.now(),
-        email: 'google.user@gmail.com',
-        name: 'Google User',
+        id: firebaseUser.uid,
+        email: firebaseUser.email || 'google.user@gmail.com',
+        name: userDoc?.displayName || firebaseUser.displayName || 'Google User',
         provider: 'google' as const,
-        favorites: [],
+        favorites: userDoc?.favorites || [],
       };
       dispatch(setUser(user));
       Alert.alert('ログイン成功', 'Googleアカウントでログインしました！');
-    } catch (error) {
-      dispatch(setError('Googleログインに失敗しました'));
+    } catch (error: any) {
+      dispatch(setError(error.message || 'Googleログインに失敗しました'));
     } finally {
       dispatch(setLoading(false));
     }
