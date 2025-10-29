@@ -92,10 +92,13 @@ export const loadUserProfile = async (firebaseUser: User): Promise<AuthUser | nu
         profileImage: firebaseUser.photoURL || '',
         provider: 'email',
         favorites: [],
+        totalVisits: 0,
+        totalRewards: 0,
+        thisMonthVisits: 0,
       };
     }
 
-    // Firestoreのデータをマージ
+    // Firestoreのデータをマージ（統計情報も含む）
     return {
       id: userDoc.uid,
       name: userDoc.displayName,
@@ -106,6 +109,9 @@ export const loadUserProfile = async (firebaseUser: User): Promise<AuthUser | nu
       bio: userDoc.bio,
       provider: userDoc.provider,
       favorites: userDoc.favorites || [],
+      totalVisits: userDoc.totalVisits || 0,
+      totalRewards: userDoc.totalRewards || 0,
+      thisMonthVisits: userDoc.thisMonthVisits || 0,
     };
   } catch (error) {
     console.error('Error loading user profile:', error);

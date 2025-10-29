@@ -45,11 +45,12 @@ export default function ProfileScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
+  // Firestoreから取得した統計情報を使用（未設定の場合は0）
   const userStats: UserStats = {
-    totalVisits: 24,
-    totalRewards: 3200,
-    favoriteStores: 8,
-    thisMonthVisits: 6,
+    totalVisits: user?.totalVisits || 0,
+    totalRewards: user?.totalRewards || 0,
+    favoriteStores: user?.favorites?.length || 0,
+    thisMonthVisits: user?.thisMonthVisits || 0,
   };
 
   // 初回ロード時にプロフィール情報を読み込み（Reduxにない場合のみ）
