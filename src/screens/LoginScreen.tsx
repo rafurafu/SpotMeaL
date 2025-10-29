@@ -15,9 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
-import { LoginCredentials, SignUpCredentials } from '../types/auth';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { signIn, signUp, signInWithGoogle, clearError, setUser } from '../store/slices/authSlice';
+import { clearError, setUser, setLoading, setError } from '../store/slices/authSlice';
 
 interface LoginScreenProps {
   onAuthSuccess: () => void;
@@ -78,22 +77,46 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    dispatch(setLoading(true));
     try {
-      const credentials: LoginCredentials = {
+      // ローカル認証シミュレーション
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const user = {
+        id: 'user-' + Date.now(),
         email: formData.email,
-        password: formData.password,
+        name: formData.email.split('@')[0],
+        provider: 'email' as const,
+        favorites: [],
       };
-      dispatch(signIn(credentials));
+      dispatch(setUser(user));
+      Alert.alert('ログイン成功', 'ようこそ！');
     } catch (error) {
-      console.error('Login error:', error);
+      dispatch(setError('ログインに失敗しました'));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
   const handleGoogleSignIn = async () => {
+    dispatch(setLoading(true));
     try {
-      dispatch(signInWithGoogle());
+      // Googleログインシミュレーション
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const user = {
+        id: 'google-user-' + Date.now(),
+        email: 'google.user@gmail.com',
+        name: 'Google User',
+        provider: 'google' as const,
+        favorites: [],
+      };
+      dispatch(setUser(user));
+      Alert.alert('ログイン成功', 'Googleアカウントでログインしました！');
     } catch (error) {
-      console.error('Google sign in error:', error);
+      dispatch(setError('Googleログインに失敗しました'));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
@@ -102,6 +125,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       id: 'test-user',
       email: 'test@example.com',
       name: 'テストユーザー',
+      provider: 'email' as const,
+      favorites: [],
     };
     dispatch(setUser(testUser));
   };

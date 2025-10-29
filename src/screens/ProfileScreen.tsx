@@ -16,7 +16,7 @@ import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { signOut } from '../store/slices/authSlice';
+import { logout } from '../store/slices/authSlice';
 
 type RootStackParamList = {
   ProfileEdit: undefined;
@@ -77,11 +77,11 @@ export default function ProfileScreen(): React.JSX.Element {
       'ログアウトしますか？',
       [
         { text: 'キャンセル', style: 'cancel' },
-        { 
-          text: 'ログアウト', 
-          style: 'destructive', 
+        {
+          text: 'ログアウト',
+          style: 'destructive',
           onPress: () => {
-            dispatch(signOut());
+            dispatch(logout());
           }
         },
       ]

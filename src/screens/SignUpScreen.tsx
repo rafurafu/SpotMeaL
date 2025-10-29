@@ -15,9 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
-import { SignUpCredentials } from '../types/auth';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { signUp, signInWithGoogle, clearError } from '../store/slices/authSlice';
+import { clearError, setUser, setLoading, setError } from '../store/slices/authSlice';
 
 interface SignUpScreenProps {
   onAuthSuccess: () => void;
@@ -98,29 +97,52 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     if (!acceptTerms) {
       Alert.alert('確認', '利用規約とプライバシーポリシーに同意してください');
       return;
     }
 
+    dispatch(setLoading(true));
     try {
-      const credentials: SignUpCredentials = {
-        name: formData.name.trim(),
+      // ローカル登録シミュレーション
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const user = {
+        id: 'user-' + Date.now(),
         email: formData.email.trim(),
-        password: formData.password,
+        name: formData.name.trim(),
+        provider: 'email' as const,
+        favorites: [],
       };
-      dispatch(signUp(credentials));
+      dispatch(setUser(user));
+      Alert.alert('登録完了', 'アカウントが作成されました！');
     } catch (error) {
-      console.error('Sign up error:', error);
+      dispatch(setError('登録に失敗しました'));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
   const handleGoogleSignUp = async () => {
+    dispatch(setLoading(true));
     try {
-      dispatch(signInWithGoogle());
+      // Googleログインシミュレーション
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const user = {
+        id: 'google-user-' + Date.now(),
+        email: 'google.user@gmail.com',
+        name: 'Google User',
+        provider: 'google' as const,
+        favorites: [],
+      };
+      dispatch(setUser(user));
+      Alert.alert('登録完了', 'Googleアカウントで登録しました！');
     } catch (error) {
-      console.error('Google sign up error:', error);
+      dispatch(setError('Google登録に失敗しました'));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
