@@ -16,6 +16,9 @@ export interface FirestoreUser {
   email: string;
   displayName: string;
   photoURL?: string;
+  phone?: string;
+  birthday?: string;
+  bio?: string;
   provider: 'email' | 'google';
   createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
   updatedAt: Timestamp | ReturnType<typeof serverTimestamp>;

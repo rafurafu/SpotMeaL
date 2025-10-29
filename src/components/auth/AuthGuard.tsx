@@ -33,13 +33,18 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
             id: firebaseUser.uid,
             email: firebaseUser.email || '',
             name: userDoc?.displayName || firebaseUser.displayName || 'ユーザー',
+            profileImage: userDoc?.photoURL || '',
+            phone: userDoc?.phone,
+            birthday: userDoc?.birthday,
+            bio: userDoc?.bio,
             provider: (userDoc?.provider || 'email') as 'email' | 'google',
             favorites: userDoc?.favorites || [],
           };
 
+          console.log('AuthGuard: User loaded with profile:', user);
           dispatch(setUser(user));
         } catch (error) {
-          console.error('Error loading user:', error);
+          console.error('AuthGuard: Error loading user:', error);
           dispatch(setUser(null));
         }
       } else {

@@ -18,6 +18,11 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
+import { getCurrentUser } from '../services/authService';
+import { uploadProfileIcon, deleteProfileIcon } from '../services/storageService';
+import { updateUserDocument } from '../services/userService';
+import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { updateUserProfile } from '../store/slices/authSlice';
 
 type RootStackParamList = {
   Profile: undefined;
@@ -37,6 +42,8 @@ interface UserProfile {
 
 export const ProfileEditScreen: React.FC = () => {
   const navigation = useNavigation<ProfileEditScreenNavigationProp>();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     name: '田中 太郎',
@@ -46,6 +53,23 @@ export const ProfileEditScreen: React.FC = () => {
     avatar: 'https://via.placeholder.com/120x120/FF6B35/FFFFFF?text=ユ',
     bio: 'SpotMealで美味しいお店を探すのが趣味です。',
   });
+
+  // Reduxからプロフィール情報を読み込み
+  React.useEffect(() => {
+    if (user) {
+      console.log('ProfileEditScreen: Loading profile from Redux:', user);
+      const profileData = {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        birthday: user.birthday || '',
+        avatar: user.profileImage || 'https://via.placeholder.com/120x120/FF6B35/FFFFFF?text=ユ',
+        bio: user.bio || '',
+      };
+      console.log('ProfileEditScreen: Setting profile data:', profileData);
+      setProfile(profileData);
+    }
+  }, [user]);
 
   const handleBack = () => {
     navigation.goBack();
@@ -60,30 +84,104 @@ export const ProfileEditScreen: React.FC = () => {
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (status !== 'granted') {
       Alert.alert('エラー', 'カメラロールへのアクセス許可が必要です');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0]) {
-      handleInputChange('avatar', result.assets[0].uri);
+      const currentUser = getCurrentUser();
+
+      if (!currentUser) {
+        Alert.alert('エラー', 'ログインしてください');
+        return;
+      }
+
+      console.log('ProfileEditScreen: Image selected:', result.assets[0].uri);
+
+      try {
+        setIsLoading(true);
+
+        // 既存の画像がFirebase Storageにある場合は削除
+        if (profile.avatar && profile.avatar.includes('firebasestorage.googleapis.com')) {
+          console.log('ProfileEditScreen: Deleting old image:', profile.avatar);
+          await deleteProfileIcon(profile.avatar);
+        }
+
+        // 新しい画像をアップロード
+        console.log('ProfileEditScreen: Uploading new image for user:', currentUser.uid);
+        const downloadURL = await uploadProfileIcon(currentUser.uid, result.assets[0].uri);
+        console.log('ProfileEditScreen: Image uploaded successfully. URL:', downloadURL);
+
+        // プロフィールを更新
+        handleInputChange('avatar', downloadURL);
+
+        // Firestoreにも即座に保存
+        console.log('ProfileEditScreen: Saving photoURL to Firestore:', downloadURL);
+        await updateUserDocument(currentUser.uid, {
+          photoURL: downloadURL,
+        });
+        console.log('ProfileEditScreen: photoURL saved to Firestore successfully');
+
+        // Reduxも更新
+        dispatch(updateUserProfile({
+          profileImage: downloadURL,
+        }));
+
+        Alert.alert('成功', 'プロフィール画像をアップロードしました');
+      } catch (error) {
+        console.error('ProfileEditScreen: Image upload error:', error);
+        Alert.alert('エラー', '画像のアップロードに失敗しました');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleSave = async () => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      Alert.alert('エラー', 'ログインしてください');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // TODO: APIに送信する処理
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const dataToSave = {
+        displayName: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        birthday: profile.birthday,
+        photoURL: profile.avatar,
+        bio: profile.bio,
+      };
+
+      console.log('ProfileEditScreen: Saving profile data:', dataToSave);
+      console.log('ProfileEditScreen: photoURL being saved:', profile.avatar);
+
+      // Firestoreにプロフィール情報を保存
+      await updateUserDocument(currentUser.uid, dataToSave);
+
+      console.log('ProfileEditScreen: Profile saved successfully');
+
+      // Reduxも更新
+      dispatch(updateUserProfile({
+        name: profile.name,
+        email: profile.email,
+        profileImage: profile.avatar,
+        phone: profile.phone,
+        birthday: profile.birthday,
+        bio: profile.bio,
+      }));
+
       Alert.alert(
         '保存完了',
         'プロフィールが更新されました',
@@ -95,6 +193,7 @@ export const ProfileEditScreen: React.FC = () => {
         ]
       );
     } catch (error) {
+      console.error('ProfileEditScreen: Save profile error:', error);
       Alert.alert('エラー', 'プロフィールの更新に失敗しました');
     } finally {
       setIsLoading(false);

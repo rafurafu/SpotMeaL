@@ -8,6 +8,8 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { getUserDocument } from './userService';
+import { AuthUser } from '../types/auth';
 
 /**
  * メールアドレスとパスワードで新規ユーザーを登録
@@ -72,6 +74,43 @@ export const logout = async (): Promise<void> => {
  */
 export const getCurrentUser = (): User | null => {
   return auth.currentUser;
+};
+
+/**
+ * FirebaseユーザーとFirestoreデータからAuthUserを作成
+ */
+export const loadUserProfile = async (firebaseUser: User): Promise<AuthUser | null> => {
+  try {
+    const userDoc = await getUserDocument(firebaseUser.uid);
+
+    if (!userDoc) {
+      // Firestoreにドキュメントがない場合は基本情報のみ
+      return {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'ユーザー',
+        email: firebaseUser.email || '',
+        profileImage: firebaseUser.photoURL || '',
+        provider: 'email',
+        favorites: [],
+      };
+    }
+
+    // Firestoreのデータをマージ
+    return {
+      id: userDoc.uid,
+      name: userDoc.displayName,
+      email: userDoc.email,
+      profileImage: userDoc.photoURL,
+      phone: userDoc.phone,
+      birthday: userDoc.birthday,
+      bio: userDoc.bio,
+      provider: userDoc.provider,
+      favorites: userDoc.favorites || [],
+    };
+  } catch (error) {
+    console.error('Error loading user profile:', error);
+    return null;
+  }
 };
 
 /**

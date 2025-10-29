@@ -16,7 +16,8 @@ import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { logout } from '../store/slices/authSlice';
+import { logout, updateUserProfile } from '../store/slices/authSlice';
+import { getCurrentUser, loadUserProfile } from '../services/authService';
 
 type RootStackParamList = {
   ProfileEdit: undefined;
@@ -43,13 +44,63 @@ export default function ProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  
+
   const userStats: UserStats = {
     totalVisits: 24,
     totalRewards: 3200,
     favoriteStores: 8,
     thisMonthVisits: 6,
   };
+
+  // 初回ロード時にプロフィール情報を読み込み（Reduxにない場合のみ）
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        console.log('ProfileScreen: No current user');
+        return;
+      }
+
+      // Reduxにプロフィール画像がない場合のみFirestoreから取得
+      if (!user?.profileImage) {
+        console.log('ProfileScreen: Loading profile from Firestore for user:', currentUser.uid);
+        try {
+          const authUser = await loadUserProfile(currentUser);
+          if (authUser) {
+            console.log('ProfileScreen: Profile loaded, updating Redux:', authUser);
+            dispatch(updateUserProfile(authUser));
+          }
+        } catch (error) {
+          console.error('ProfileScreen: Failed to load profile:', error);
+        }
+      } else {
+        console.log('ProfileScreen: Using cached profile from Redux');
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  // プロフィール編集画面から戻ってきた時に再読み込み
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+
+      console.log('ProfileScreen: Screen focused, reloading profile');
+      try {
+        const authUser = await loadUserProfile(currentUser);
+        if (authUser) {
+          console.log('ProfileScreen: Profile reloaded, updating Redux:', authUser);
+          dispatch(updateUserProfile(authUser));
+        }
+      } catch (error) {
+        console.error('ProfileScreen: Failed to reload profile:', error);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, dispatch]);
 
   const handleEditProfile = () => {
     navigation.navigate('ProfileEdit');
@@ -156,16 +207,22 @@ export default function ProfileScreen(): React.JSX.Element {
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               <Image
-                source={{ uri: 'https://via.placeholder.com/80x80/FF6B35/FFFFFF?text=ユ' }}
+                source={{
+                  uri: user?.profileImage || 'https://via.placeholder.com/80x80/FF6B35/FFFFFF?text=ユ'
+                }}
                 style={styles.avatar}
               />
-              <TouchableOpacity style={styles.editAvatarButton}>
+              <TouchableOpacity style={styles.editAvatarButton} onPress={handleEditProfile}>
                 <Ionicons name="camera" size={16} color={colors.white} />
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>{user?.name || 'ユーザー名'}</Text>
-              <Text style={styles.userEmail}>{user?.email || 'メールアドレス'}</Text>
+              <Text style={styles.userName}>
+                {user?.name || 'ユーザー名'}
+              </Text>
+              <Text style={styles.userEmail}>
+                {user?.email || 'メールアドレス'}
+              </Text>
               <TouchableOpacity
                 style={styles.editProfileButton}
                 onPress={handleEditProfile}

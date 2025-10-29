@@ -3,6 +3,9 @@ export interface AuthUser {
   name: string;
   email: string;
   profileImage?: string;
+  phone?: string;
+  birthday?: string;
+  bio?: string;
   provider: 'email' | 'google';
   favorites: string[];
 }
