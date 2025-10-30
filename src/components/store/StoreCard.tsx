@@ -12,8 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
 import { colors, spacing } from '../../utils/constants';
-import { auth } from '../../config/firebase';
-import { addFavorite, removeFavorite, getUserDocument } from '../../services/userService';
+import { useFavorites } from '../../contexts/FavoritesContext';
 import { getReservationByRestaurant } from '../../services/reservationService';
 
 interface Store {
@@ -37,7 +36,7 @@ interface StoreCardProps {
 
 
 export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite: checkIsFavorite, toggleFavorite } = useFavorites();
   const [isReserved, setIsReserved] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
@@ -46,19 +45,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
     ? { uri: store.image.uri }
     : store.image;
 
-  // お気に入り状態をロード
-  useEffect(() => {
-    const loadFavoriteStatus = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userData = await getUserDocument(user.uid);
-        if (userData?.favorites) {
-          setIsFavorite(userData.favorites.includes(store.id));
-        }
-      }
-    };
-    loadFavoriteStatus();
-  }, [store.id]);
+  const isFavorite = checkIsFavorite(store.id);
 
   // 予約状態をロード
   useEffect(() => {
@@ -72,20 +59,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
   const handleFavoriteToggle = async (e: any) => {
     e.stopPropagation(); // カードのonPressを防ぐ
 
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('エラー', 'お気に入りに追加するにはログインが必要です');
-      return;
-    }
-
     try {
-      if (isFavorite) {
-        await removeFavorite(user.uid, store.id);
-        setIsFavorite(false);
-      } else {
-        await addFavorite(user.uid, store.id);
-        setIsFavorite(true);
-      }
+      await toggleFavorite(store.id);
     } catch (error) {
       Alert.alert('エラー', 'お気に入りの更新に失敗しました');
     }

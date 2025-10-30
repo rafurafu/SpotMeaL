@@ -21,6 +21,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { useStoreContext, Store } from '../contexts/StoreContext';
+import { useFavorites } from '../contexts/FavoritesContext';
 import { getCurrentReward } from '../services/restaurantService';
 
 // Navigation types
@@ -41,6 +42,7 @@ const categories = ['全て', '和食', 'ラーメン', '寿司', 'カフェ', '
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { stores, loading, refreshStores } = useStoreContext();
+  const { favorites } = useFavorites();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('全て');
   const [refreshing, setRefreshing] = useState(false);
@@ -156,17 +158,28 @@ export const HomeScreen: React.FC = () => {
                 </Text>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.headerButton}
                   onPress={() => navigation.navigate('Profile')}
                 >
                   <Ionicons name="person-outline" size={24} color={colors.gray[600]} />
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.headerButton}
+                <TouchableOpacity
+                  style={[styles.headerButton, styles.favoriteButtonContainer]}
                   onPress={() => navigation.navigate('Favorites')}
                 >
-                  <Ionicons name="heart-outline" size={24} color={colors.gray[600]} />
+                  <Ionicons
+                    name={favorites.length > 0 ? "heart" : "heart-outline"}
+                    size={24}
+                    color={favorites.length > 0 ? colors.error[500] : colors.gray[600]}
+                  />
+                  {favorites.length > 0 && (
+                    <View style={styles.favoriteBadge}>
+                      <Text style={styles.favoriteBadgeText}>
+                        {favorites.length > 99 ? '99+' : favorites.length}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -375,6 +388,28 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
     marginLeft: 4,
+  },
+  favoriteButtonContainer: {
+    position: 'relative',
+  },
+  favoriteBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: colors.error[500],
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  favoriteBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.white,
   },
   bottomNavigation: {
     flexDirection: 'row',
