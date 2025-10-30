@@ -15,6 +15,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import { AuthNavigator } from './AuthNavigator';
 import { AuthGuard } from '../components/auth/AuthGuard';
 import { useAppSelector } from '../hooks/redux';
+import { Store } from '../contexts/StoreContext';
 
 import { colors, fontSizes } from '../utils/constants';
 
@@ -32,20 +33,6 @@ export type RootStackParamList = {
   Profile: undefined;
   Favorites: undefined;
 };
-
-interface Store {
-  id: string;
-  name: string;
-  category: string;
-  image: string;
-  description: string;
-  address: string;
-  rating: number;
-  distance: number;
-  currentReward: number;
-  isAvailable: boolean;
-  freePostsRemaining: number;
-}
 
 const Stack = createStackNavigator<RootStackParamList>();
 

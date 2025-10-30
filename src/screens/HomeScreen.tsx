@@ -21,6 +21,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { useStoreContext, Store } from '../contexts/StoreContext';
+import { getCurrentReward } from '../services/restaurantService';
 
 // Navigation types
 type RootStackParamList = {
@@ -35,27 +36,11 @@ type RootStackParamList = {
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
-// 現在の時間帯に基づく報酬を取得する関数
-const getCurrentReward = (): { amount: number; timeSlot: string } => {
-  const now = new Date();
-  const hour = now.getHours() + now.getMinutes() / 60;
-  
-  if (hour >= 14 && hour < 17) {
-    return { amount: 150, timeSlot: 'アイドルタイム (14:00-17:00)' };
-  } else if (hour >= 17 && hour < 19) {
-    return { amount: 120, timeSlot: '平日夜早め (17:00-19:00)' };
-  } else if (hour >= 12 && hour < 13.5) {
-    return { amount: 80, timeSlot: 'ピーク時 (12:00-13:30)' };
-  } else {
-    return { amount: 100, timeSlot: '通常時間' };
-  }
-};
-
 const categories = ['全て', '和食', 'ラーメン', '寿司', 'カフェ', 'イタリアン'];
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { stores } = useStoreContext();
+  const { stores, loading, refreshStores } = useStoreContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('全て');
   const [refreshing, setRefreshing] = useState(false);
@@ -108,10 +93,14 @@ export const HomeScreen: React.FC = () => {
   // 引っ張って更新
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
+    try {
+      await refreshStores();
       setCurrentReward(getCurrentReward());
+    } catch (error) {
+      console.error('Failed to refresh stores:', error);
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   // 1分ごとに報酬情報を更新
@@ -246,7 +235,11 @@ export const HomeScreen: React.FC = () => {
           </Text>
         </View>
         
-        {filteredStores.length > 0 ? (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>店舗情報を読み込み中...</Text>
+          </View>
+        ) : filteredStores.length > 0 ? (
           <FlatList
             data={filteredStores}
             renderItem={renderStoreItem}
@@ -263,7 +256,7 @@ export const HomeScreen: React.FC = () => {
             scrollEventThrottle={16}
           />
         ) : (
-          <ScrollView 
+          <ScrollView
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -508,6 +501,17 @@ const styles = StyleSheet.create({
   },
   storeListContent: {
     paddingBottom: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: fontSizes.base,
+    color: colors.gray[600],
+    marginTop: 12,
   },
   storeListHeader: {
     paddingHorizontal: DIMENSIONS.screenPadding,

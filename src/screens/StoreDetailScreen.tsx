@@ -16,6 +16,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
+import { Store } from '../contexts/StoreContext';
 
 // Navigation types
 type RootStackParamList = {
@@ -26,20 +27,6 @@ type RootStackParamList = {
 
 type StoreDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'StoreDetail'>;
 type StoreDetailScreenRouteProp = RouteProp<RootStackParamList, 'StoreDetail'>;
-
-interface Store {
-  id: string;
-  name: string;
-  category: string;
-  image: string;
-  description: string;
-  address: string;
-  rating: number;
-  distance: number;
-  currentReward: number;
-  isAvailable: boolean;
-  freePostsRemaining: number;
-}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

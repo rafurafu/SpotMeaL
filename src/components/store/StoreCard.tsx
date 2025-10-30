@@ -32,12 +32,17 @@ interface StoreCardProps {
 
 
 export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
+  // 画像ソースの処理：require()で取得した画像リソースまたはURIオブジェクト
+  const imageSource = typeof store.image === 'object' && store.image.uri
+    ? { uri: store.image.uri }
+    : store.image;
+
   return (
     <Card style={styles.cardContainer}>
       <TouchableOpacity onPress={() => onPress(store)} activeOpacity={0.8}>
         <View style={styles.imageContainer}>
           <Image
-            source={store.image}
+            source={imageSource}
             style={styles.storeImage}
             resizeMode="cover"
           />

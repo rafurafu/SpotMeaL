@@ -1,5 +1,14 @@
 // src/contexts/StoreContext.tsx
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  getAllRestaurants,
+  createRestaurant,
+  updateRestaurant as updateRestaurantFirestore,
+  deleteRestaurant,
+  getCurrentReward as getReward,
+  FirestoreRestaurant,
+} from '../services/restaurantService';
+import { migrateInitialStores, shouldMigrate } from '../scripts/migrateStores';
 
 interface Store {
   id: string;
@@ -17,9 +26,11 @@ interface Store {
 
 interface StoreContextType {
   stores: Store[];
-  addStore: (store: Omit<Store, 'id'>) => void;
-  updateStore: (id: string, store: Partial<Store>) => void;
-  deleteStore: (id: string) => void;
+  loading: boolean;
+  addStore: (store: Omit<Store, 'id'>) => Promise<void>;
+  updateStore: (id: string, store: Partial<Store>) => Promise<void>;
+  deleteStore: (id: string) => Promise<void>;
+  refreshStores: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -36,108 +47,172 @@ interface StoreProviderProps {
   children: ReactNode;
 }
 
-// 現在の時間帯に基づく報酬を取得する関数
-const getCurrentReward = (): number => {
-  const now = new Date();
-  const hour = now.getHours() + now.getMinutes() / 60;
-  
-  if (hour >= 14 && hour < 17) {
-    return 150; // アイドルタイム
-  } else if (hour >= 17 && hour < 19) {
-    return 120; // 平日夜早め
-  } else if (hour >= 12 && hour < 13.5) {
-    return 80; // ピーク時
-  } else {
-    return 100; // 通常時間
-  }
+/**
+ * FirestoreRestaurantをStore型に変換
+ * 画像URLからimageオブジェクトに変換（プレースホルダー）
+ */
+const convertFirestoreToStore = (restaurant: FirestoreRestaurant): Store => {
+  return {
+    id: restaurant.id,
+    name: restaurant.name,
+    category: restaurant.category,
+    image: { uri: restaurant.imageUrl }, // URLをimageオブジェクトに変換
+    description: restaurant.description,
+    address: restaurant.address,
+    rating: restaurant.rating,
+    distance: restaurant.distance,
+    currentReward: restaurant.currentReward,
+    isAvailable: restaurant.isAvailable,
+    freePostsRemaining: restaurant.freePostsRemaining,
+  };
 };
 
-// 初期データ
-const initialStores: Store[] = [
-  {
-    id: '1',
-    name: '和食処 さくら',
-    category: '和食',
-    image: require('../../assets/images/stores/sakura.jpg'),
-    description: 'こだわりの食材を使った季節の和食をお楽しみください。落ち着いた雰囲気の店内でゆっくりとお食事をどうぞ。',
-    address: '東京都渋谷区神宮前1-2-3',
-    rating: 4.5,
-    distance: 0.3,
-    currentReward: getCurrentReward(),
-    isAvailable: true,
-    freePostsRemaining: 2,
-  },
-  {
-    id: '2',
-    name: 'ラーメン横丁',
-    category: 'ラーメン',
-    image: require('../../assets/images/stores/ramen.jpg'),
-    description: '濃厚豚骨スープが自慢のラーメン店。深夜まで営業しているので、遅い時間でもお楽しみいただけます。',
-    address: '東京都新宿区歌舞伎町2-1-5',
-    rating: 4.2,
-    distance: 0.8,
-    currentReward: getCurrentReward(),
-    isAvailable: true,
-    freePostsRemaining: 1,
-  },
-  {
-    id: '3',
-    name: '寿司 一心',
-    category: '寿司',
-    image: require('../../assets/images/stores/sushi.jpg'),
-    description: '新鮮な魚介を使った本格江戸前寿司。職人の技が光る逸品をカウンターでお楽しみください。',
-    address: '東京都中央区銀座4-5-6',
-    rating: 4.8,
-    distance: 1.2,
-    currentReward: getCurrentReward(),
-    isAvailable: true,
-    freePostsRemaining: 3,
-  },
-  {
-    id: '4',
-    name: 'カフェ・ド・パリ',
-    category: 'カフェ',
-    image: require('../../assets/images/stores/cafe.jpg'),
-    description: 'パリの街角にあるような雰囲気のカフェ。こだわりのコーヒーと手作りスイーツをご提供。',
-    address: '東京都港区表参道3-4-7',
-    rating: 4.3,
-    distance: 0.5,
-    currentReward: getCurrentReward(),
-    isAvailable: true,
-    freePostsRemaining: 0,
-  },
-];
-
 export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
-  const [stores, setStores] = useState<Store[]>(initialStores);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const addStore = (storeData: Omit<Store, 'id'>) => {
-    const newStore: Store = {
-      ...storeData,
-      id: Date.now().toString(), // 簡単なID生成
-      rating: 4.0, // デフォルト評価
-      distance: Math.round((Math.random() * 2 + 0.1) * 10) / 10, // ランダムな距離
-      currentReward: getCurrentReward(),
-      isAvailable: true,
-      freePostsRemaining: Math.floor(Math.random() * 4), // 0-3のランダム
+  /**
+   * Firestoreから店舗データを取得
+   */
+  const loadStoresFromFirestore = async () => {
+    try {
+      setLoading(true);
+      const restaurants = await getAllRestaurants();
+      const convertedStores = restaurants.map(convertFirestoreToStore);
+      setStores(convertedStores);
+      console.log(`Loaded ${convertedStores.length} stores from Firestore`);
+    } catch (error) {
+      console.error('Failed to load stores from Firestore:', error);
+      // エラー時は空配列を設定
+      setStores([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * 初回ロード時に実行
+   * - Firestoreにデータがない場合は自動移行
+   * - データがある場合は取得のみ
+   */
+  useEffect(() => {
+    const initializeStores = async () => {
+      try {
+        const needsMigration = await shouldMigrate();
+        if (needsMigration) {
+          console.log('No stores in Firestore. Running migration...');
+          await migrateInitialStores();
+        }
+        await loadStoresFromFirestore();
+      } catch (error) {
+        console.error('Failed to initialize stores:', error);
+        setLoading(false);
+      }
     };
-    setStores(prev => [...prev, newStore]);
+
+    initializeStores();
+  }, []);
+
+  /**
+   * 店舗を追加（Firestoreに保存）
+   */
+  const addStore = async (storeData: Omit<Store, 'id'>): Promise<void> => {
+    try {
+      const reward = getReward();
+
+      // 画像をURL形式に変換（ローカル画像の場合はプレースホルダー）
+      let imageUrl = 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=店舗画像';
+      if (typeof storeData.image === 'string') {
+        imageUrl = storeData.image;
+      } else if (storeData.image?.uri) {
+        imageUrl = storeData.image.uri;
+      }
+
+      const firestoreData = {
+        name: storeData.name,
+        category: storeData.category,
+        imageUrl,
+        description: storeData.description,
+        address: storeData.address,
+        rating: storeData.rating || 4.0,
+        distance: storeData.distance || Math.round((Math.random() * 2 + 0.1) * 10) / 10,
+        currentReward: reward.amount,
+        isAvailable: storeData.isAvailable ?? true,
+        freePostsRemaining: storeData.freePostsRemaining ?? Math.floor(Math.random() * 4),
+      };
+
+      await createRestaurant(firestoreData);
+      await loadStoresFromFirestore(); // リロード
+      console.log('Store added successfully');
+    } catch (error) {
+      console.error('Failed to add store:', error);
+      throw error;
+    }
   };
 
-  const updateStore = (id: string, storeData: Partial<Store>) => {
-    setStores(prev => 
-      prev.map(store => 
-        store.id === id ? { ...store, ...storeData } : store
-      )
-    );
+  /**
+   * 店舗を更新（Firestoreに保存）
+   */
+  const updateStore = async (id: string, storeData: Partial<Store>): Promise<void> => {
+    try {
+      // image以外のフィールドのみ更新
+      const { image, ...updateData } = storeData;
+
+      // imageが更新される場合はURL形式に変換
+      let imageUrl: string | undefined;
+      if (image) {
+        if (typeof image === 'string') {
+          imageUrl = image;
+        } else if (image?.uri) {
+          imageUrl = image.uri;
+        }
+      }
+
+      await updateRestaurantFirestore(id, {
+        ...updateData,
+        ...(imageUrl && { imageUrl }),
+      });
+
+      await loadStoresFromFirestore(); // リロード
+      console.log('Store updated successfully');
+    } catch (error) {
+      console.error('Failed to update store:', error);
+      throw error;
+    }
   };
 
-  const deleteStore = (id: string) => {
-    setStores(prev => prev.filter(store => store.id !== id));
+  /**
+   * 店舗を削除（Firestoreから削除）
+   */
+  const deleteStore = async (id: string): Promise<void> => {
+    try {
+      await deleteRestaurant(id);
+      await loadStoresFromFirestore(); // リロード
+      console.log('Store deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete store:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 店舗リストを再読み込み
+   */
+  const refreshStores = async (): Promise<void> => {
+    await loadStoresFromFirestore();
   };
 
   return (
-    <StoreContext.Provider value={{ stores, addStore, updateStore, deleteStore }}>
+    <StoreContext.Provider
+      value={{
+        stores,
+        loading,
+        addStore,
+        updateStore,
+        deleteStore,
+        refreshStores,
+      }}
+    >
       {children}
     </StoreContext.Provider>
   );
