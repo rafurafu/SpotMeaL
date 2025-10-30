@@ -240,11 +240,14 @@ export const StoreDetailScreen: React.FC = () => {
             <Ionicons name="diamond" size={20} color={colors.warning[500]} />
             <Text style={styles.rewardText}>¥{store.currentReward}</Text>
           </View>
-          {store.isAvailable && (
-            <View style={styles.availableBadge}>
-              <Text style={styles.availableText}>受付中</Text>
-            </View>
-          )}
+          <View style={[
+            styles.availableBadge,
+            (isReserved || !store.isAvailable) && styles.unavailableBadge
+          ]}>
+            <Text style={styles.availableText}>
+              {isReserved ? '受付終了' : store.isAvailable ? '受付中' : '受付終了'}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.contentContainer}>
@@ -465,6 +468,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  unavailableBadge: {
+    backgroundColor: colors.gray[500],
   },
   availableText: {
     fontSize: fontSizes.sm,
