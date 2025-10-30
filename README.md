@@ -89,35 +89,112 @@
 
 ## 🛠 技術スタック
 
-- **フレームワーク**: React Native + Expo
-- **言語**: TypeScript
-- **デザインシステム**: タイミー風UI/UX
-- **状態管理**: React Context / Redux Toolkit
-- **ナビゲーション**: React Navigation
-- **QRコード**: expo-camera, expo-barcode-scanner
-- **決済**: Stripe (expo-stripe-payment)
+### コアテクノロジー
+- **フレームワーク**: React Native 0.81.4
+- **開発環境**: Expo ~54.0.0
+- **言語**: TypeScript ~5.9.2
+
+### 状態管理
+- **Redux Toolkit** 2.8.2
+- **React Redux** 9.2.0
+- **React Context API** (Store管理、お気に入り管理)
+
+### ナビゲーション
+- **React Navigation** 7.1.17
+  - Native Stack Navigator 7.3.25
+  - Stack Navigator 7.4.7
+
+### バックエンド・認証
+- **Firebase** 12.4.0
+  - Authentication (メール/パスワード、Google認証)
+  - Firestore (データベース)
+  - Storage (画像保存)
+
+### デバイス機能
+- **expo-camera** ~17.0.7 (カメラ・QRスキャン)
+- **expo-barcode-scanner** 13.0.1 (バーコードスキャン)
+- **expo-location** ~19.0.7 (位置情報)
+- **expo-image-picker** ~17.0.8 (画像選択)
+- **expo-file-system** 19.0.17 (ファイルシステム)
+
+### マップ
+- **react-native-maps** 1.20.1
+- **Google Maps API** (iOS/Android統合済み)
+
+### ローカルストレージ
+- **AsyncStorage** 1.24.0
 
 ### ファイル構成
 ```
 SpotMeal/
+├── assets/
+│   └── images/                      # アプリアイコン、スプラッシュ画像
 ├── src/
+│   ├── assets/
+│   │   └── spotmeal-logo.tsx        # ロゴコンポーネント
 │   ├── components/
-│   │   ├── RestaurantCard.tsx
-│   │   └── common/
+│   │   ├── auth/
+│   │   │   └── AuthGuard.tsx        # 認証ガード
+│   │   ├── common/
+│   │   │   └── QRScanConfirm.tsx    # QRスキャン確認モーダル
+│   │   ├── store/
+│   │   │   └── StoreCard.tsx        # 店舗カードコンポーネント
+│   │   └── ui/
+│   │       ├── Button.tsx           # 汎用ボタン
+│   │       ├── Card.tsx             # 汎用カード
+│   │       └── Input.tsx            # 汎用入力フィールド
+│   ├── config/
+│   │   └── firebase.ts              # Firebase設定
+│   ├── contexts/
+│   │   ├── FavoritesContext.tsx     # お気に入り管理
+│   │   └── StoreContext.tsx         # 店舗データ管理
+│   ├── hooks/
+│   │   └── redux.ts                 # Redux用カスタムフック
+│   ├── navigation/
+│   │   ├── AppNavigator.tsx         # メインナビゲーター
+│   │   └── AuthNavigator.tsx        # 認証ナビゲーター
 │   ├── screens/
-│   │   ├── HomeScreen.tsx
-│   │   ├── RestaurantDetailScreen.tsx
-│   │   └── QRScanScreen.tsx
+│   │   ├── CreatePostScreen.tsx     # 投稿作成画面
+│   │   ├── EarningsScreen.tsx       # 収益確認画面
+│   │   ├── FavoritesScreen.tsx      # お気に入り一覧画面
+│   │   ├── HomeScreen.tsx           # ホーム画面
+│   │   ├── LoginScreen.tsx          # ログイン画面
+│   │   ├── MapScreen.tsx            # マップ画面
+│   │   ├── ProfileEditScreen.tsx    # プロフィール編集画面
+│   │   ├── ProfileScreen.tsx        # プロフィール画面
+│   │   ├── QRScanScreen.tsx         # QRコードスキャン画面
+│   │   ├── ReservationScreen.tsx    # 予約画面
+│   │   ├── SignUpScreen.tsx         # 新規登録画面
+│   │   ├── StoreDetailScreen.tsx    # 店舗詳細画面
+│   │   └── StoreRegistrationScreen.tsx  # 店舗登録画面
+│   ├── scripts/
+│   │   └── migrateStores.ts         # 店舗データ移行スクリプト
+│   ├── services/
+│   │   ├── authService.ts           # 認証サービス
+│   │   ├── imageService.ts          # 画像処理サービス
+│   │   ├── postService.ts           # 投稿サービス
+│   │   ├── reservationService.ts    # 予約サービス
+│   │   ├── restaurantService.ts     # 店舗情報サービス
+│   │   ├── storageService.ts        # Firebase Storageサービス
+│   │   └── userService.ts           # ユーザー情報サービス
+│   ├── store/
+│   │   ├── index.ts                 # Redux Store設定
+│   │   └── slices/
+│   │       ├── authSlice.ts         # 認証状態管理
+│   │       └── userSlice.ts         # ユーザー状態管理
 │   ├── types/
-│   │   └── Restaurant.ts
-│   ├── utils/
-│   │   ├── colors.ts
-│   │   └── fonts.ts
-│   └── navigation/
-│       └── AppNavigator.tsx
-├── App.tsx
-├── app.json
-└── package.json
+│   │   ├── api.ts                   # API型定義
+│   │   └── auth.ts                  # 認証型定義
+│   └── utils/
+│       └── constants.ts             # 定数（カラー、フォント、スペーシング）
+├── App.tsx                          # アプリエントリーポイント
+├── app.json                         # Expo設定
+├── package.json                     # 依存関係
+├── tsconfig.json                    # TypeScript設定
+├── .env                             # 環境変数（Firebase設定）
+├── README.md                        # プロジェクトドキュメント
+├── FIREBASE_SETUP.md                # Firebase設定ガイド
+└── SECURITY_STEPS.md                # セキュリティガイド
 ```
 
 ---
@@ -130,15 +207,72 @@ SpotMeal/
 
 ## 🚦 開発状況
 
-- [x] ビジネスモデル設計
-- [x] UI/UXデザイン（タイミー風）
-- [ ] Expo環境セットアップ
-- [ ] 基本画面実装（ホーム画面）
-- [ ] QRコード予約機能（expo-camera使用）
-- [ ] 報酬管理システム
-- [ ] 店舗管理機能
+### ✅ 実装済み機能
+
+#### 認証機能
+- [x] メールアドレス/パスワードでのログイン・新規登録
+- [x] Googleアカウント連携
+- [x] ログアウト機能
+- [x] 認証状態の永続化
+- [x] AuthGuardによる認証保護
+
+#### ホーム画面機能
+- [x] 店舗一覧表示（カード形式）
+- [x] カテゴリフィルター（全て、和食、ラーメン、寿司、カフェ、イタリアン）
+- [x] 店舗検索機能（店舗名・カテゴリ）
+- [x] 時間帯別報酬表示（アイドルタイム150円、ピーク時80円など）
+- [x] リアルタイム報酬更新
+- [x] 引っ張って更新（Pull to Refresh）
+- [x] スクロールアニメーション
+
+#### 店舗管理機能
+- [x] 店舗詳細表示
+- [x] 店舗登録（画像アップロード対応）
+- [x] 店舗情報編集
+- [x] 店舗削除
+- [x] Firestore連携（CRUD操作）
+- [x] Firebase Storage連携（画像保存）
+- [x] 無料掲載残数管理
+
+#### お気に入り機能
+- [x] お気に入り追加/削除
+- [x] お気に入り一覧表示
+- [x] AsyncStorageによる永続化
+
+#### マップ機能
+- [x] Google Maps統合
+- [x] 店舗位置の表示
+- [x] 位置情報パーミッション設定
+- [x] iOS/Android両対応
+
+#### QRコード機能
+- [x] QRコードスキャン画面
+- [x] カメラ機能統合
+- [x] バーコードスキャナー
+- [x] QRスキャン確認モーダル
+
+#### 予約機能
+- [x] 店舗予約画面
+- [x] 予約情報のFirestore保存
+
+#### プロフィール機能
+- [x] プロフィール表示・編集
+- [x] 統計情報表示（総来店回数、総獲得報酬、今月の来店回数）
+- [x] プロフィール画像アップロード対応
+
+#### デザインシステム
+- [x] タイミー風UI/UX
+- [x] 再利用可能なUIコンポーネント（Button, Card, Input）
+- [x] カラーシステム
+- [x] フォントサイズシステム
+- [x] スペーシングシステム
+
+### 📋 今後の実装予定
 - [ ] 決済システム連携（Stripe）
 - [ ] プッシュ通知（expo-notifications）
+- [ ] 報酬管理システムの最適化
+- [ ] レビュー・評価機能
+- [ ] 管理者ダッシュボード
 
 ---
 
@@ -149,6 +283,7 @@ SpotMeal/
 - npm または yarn
 - Expo CLI
 - Expo Go アプリ（テスト用）
+- Firebase プロジェクト（認証・データベース用）
 
 ### インストール手順
 
@@ -165,25 +300,47 @@ SpotMeal/
    yarn install
    ```
 
-3. **Expo開発サーバーの起動**
+3. **環境変数の設定**
+
+   プロジェクトルートに `.env` ファイルを作成し、Firebase設定を追加：
+   ```env
+   EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ```
+
+   詳細は [FIREBASE_SETUP.md](FIREBASE_SETUP.md) を参照してください。
+
+4. **Expo開発サーバーの起動**
    ```bash
    npx expo start
    ```
 
-4. **デバイスでテスト**
+5. **デバイスでテスト**
    - iOS: カメラアプリでQRコードをスキャン
    - Android: Expo Goアプリでスキャン
 
 ### 主要な依存関係
 ```json
 {
-  "@expo/vector-icons": "^13.0.0",
-  "expo": "~49.0.0",
-  "expo-camera": "~13.4.0",
-  "expo-barcode-scanner": "~12.5.0",
-  "react-native-paper": "^5.10.0",
-  "@react-navigation/native": "^6.1.0",
-  "@react-navigation/stack": "^6.3.0"
+  "expo": "~54.0.0",
+  "react": "19.1.0",
+  "react-native": "0.81.4",
+  "typescript": "~5.9.2",
+  "@reduxjs/toolkit": "^2.8.2",
+  "react-redux": "^9.2.0",
+  "@react-navigation/native": "^7.1.17",
+  "@react-navigation/native-stack": "^7.3.25",
+  "firebase": "^12.4.0",
+  "expo-camera": "~17.0.7",
+  "expo-barcode-scanner": "^13.0.1",
+  "expo-location": "~19.0.7",
+  "expo-image-picker": "~17.0.8",
+  "react-native-maps": "1.20.1",
+  "@react-native-async-storage/async-storage": "^1.24.0"
 }
 ```
 
@@ -197,9 +354,9 @@ SpotMeal/
 
 ## 👨‍💻 開発者
 
-**プロジェクトオーナー**: [daisuke]  
+**プロジェクトオーナー**: [daisuke]
 **連絡先**: [bukbjrafu@gmail.com]
 
 ---
 
-*最終更新: 2025年8月25日*
+*最終更新: 2025年10月30日*
