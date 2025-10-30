@@ -101,6 +101,101 @@ export const deleteProfileIcon = async (imageUrl: string): Promise<void> => {
 };
 
 /**
+ * 店舗画像をFirebase Storageにアップロード
+ * @param restaurantId 店舗ID
+ * @param imageUri ローカル画像のURI
+ * @returns アップロードされた画像のダウンロードURL
+ */
+export const uploadRestaurantImage = async (
+  restaurantId: string,
+  imageUri: string
+): Promise<string> => {
+  try {
+    // ローカル画像をBlobに変換
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+
+    // 画像の拡張子を取得
+    const extension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+
+    // ファイル名を生成（タイムスタンプを含める）
+    const timestamp = Date.now();
+    const fileName = `restaurant_${restaurantId}_${timestamp}.${extension}`;
+
+    // Storageの参照を作成
+    const storageRef = ref(storage, `restaurants/${restaurantId}/${fileName}`);
+
+    // MIMEタイプを決定
+    let mimeType = 'image/jpeg';
+    if (extension === 'png') {
+      mimeType = 'image/png';
+    } else if (extension === 'gif') {
+      mimeType = 'image/gif';
+    } else if (extension === 'webp') {
+      mimeType = 'image/webp';
+    }
+
+    // メタデータを設定
+    const metadata = {
+      contentType: mimeType,
+    };
+
+    // Blobデータをアップロード
+    const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
+
+    // アップロード完了を待つ
+    await uploadTask;
+
+    // ダウンロードURLを取得
+    const downloadURL = await getDownloadURL(storageRef);
+
+    console.log('Restaurant image uploaded successfully:', downloadURL);
+    return downloadURL;
+  } catch (error) {
+    console.error('Restaurant image upload error:', error);
+    throw new Error('店舗画像のアップロードに失敗しました');
+  }
+};
+
+/**
+ * 店舗画像を削除
+ * @param imageUrl 削除する画像のURL
+ */
+export const deleteRestaurantImage = async (imageUrl: string): Promise<void> => {
+  try {
+    // Firebase StorageのURLかどうかを確認
+    if (!imageUrl.includes('firebasestorage.googleapis.com')) {
+      console.log('Firebase Storage以外の画像のため削除をスキップします');
+      return;
+    }
+
+    // URLからStorageパスを取得
+    const url = new URL(imageUrl);
+    const pathMatch = url.pathname.match(/\/o\/(.+)\?/);
+
+    if (!pathMatch || !pathMatch[1]) {
+      console.error('Invalid storage URL:', imageUrl);
+      return;
+    }
+
+    const path = decodeURIComponent(pathMatch[1]);
+    const storageRef = ref(storage, path);
+
+    // 画像を削除
+    await deleteObject(storageRef);
+    console.log('Restaurant image deleted:', path);
+  } catch (error: any) {
+    // ファイルが存在しない場合のエラーは無視
+    if (error.code === 'storage/object-not-found') {
+      console.log('File not found, skipping deletion');
+      return;
+    }
+    console.error('Restaurant image deletion error:', error);
+    throw new Error('店舗画像の削除に失敗しました');
+  }
+};
+
+/**
  * 画像URLからファイル名を取得
  * @param imageUrl 画像URL
  * @returns ファイル名

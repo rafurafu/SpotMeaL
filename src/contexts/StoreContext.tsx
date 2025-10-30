@@ -8,6 +8,7 @@ import {
   getCurrentReward as getReward,
   FirestoreRestaurant,
 } from '../services/restaurantService';
+import { uploadRestaurantImage, deleteRestaurantImage } from '../services/storageService';
 import { migrateInitialStores, shouldMigrate } from '../scripts/migrateStores';
 
 interface Store {
@@ -120,12 +121,19 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
     try {
       const reward = getReward();
 
-      // 画像をURL形式に変換（ローカル画像の場合はプレースホルダー）
+      // 一時的なIDを生成（画像アップロード用）
+      const tempId = `temp_${Date.now()}`;
+
+      // 画像をFirebase Storageにアップロード
       let imageUrl = 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=店舗画像';
-      if (typeof storeData.image === 'string') {
+
+      if (storeData.image?.uri) {
+        // ローカル画像の場合、Storageにアップロード
+        console.log('Uploading restaurant image to Storage...');
+        imageUrl = await uploadRestaurantImage(tempId, storeData.image.uri);
+      } else if (typeof storeData.image === 'string') {
+        // 既にURLの場合はそのまま使用
         imageUrl = storeData.image;
-      } else if (storeData.image?.uri) {
-        imageUrl = storeData.image.uri;
       }
 
       const firestoreData = {
@@ -143,7 +151,7 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
 
       await createRestaurant(firestoreData);
       await loadStoresFromFirestore(); // リロード
-      console.log('Store added successfully');
+      console.log('Store added successfully with image URL:', imageUrl);
     } catch (error) {
       console.error('Failed to add store:', error);
       throw error;
@@ -158,13 +166,16 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
       // image以外のフィールドのみ更新
       const { image, ...updateData } = storeData;
 
-      // imageが更新される場合はURL形式に変換
+      // imageが更新される場合はStorageにアップロード
       let imageUrl: string | undefined;
       if (image) {
-        if (typeof image === 'string') {
+        if (image?.uri) {
+          // ローカル画像の場合、Storageにアップロード
+          console.log('Uploading updated restaurant image to Storage...');
+          imageUrl = await uploadRestaurantImage(id, image.uri);
+        } else if (typeof image === 'string') {
+          // 既にURLの場合はそのまま使用
           imageUrl = image;
-        } else if (image?.uri) {
-          imageUrl = image.uri;
         }
       }
 
@@ -186,6 +197,19 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
    */
   const deleteStore = async (id: string): Promise<void> => {
     try {
+      // 店舗情報を取得して画像URLを確認
+      const storeToDelete = stores.find(store => store.id === id);
+
+      // 画像がStorage上にある場合は削除
+      if (storeToDelete?.image?.uri) {
+        try {
+          await deleteRestaurantImage(storeToDelete.image.uri);
+        } catch (error) {
+          console.warn('Failed to delete restaurant image:', error);
+          // 画像削除に失敗してもFirestoreからは削除を続行
+        }
+      }
+
       await deleteRestaurant(id);
       await loadStoresFromFirestore(); // リロード
       console.log('Store deleted successfully');
