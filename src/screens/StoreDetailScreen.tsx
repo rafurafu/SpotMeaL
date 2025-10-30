@@ -1,5 +1,5 @@
 // src/screens/StoreDetailScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -17,6 +19,9 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { Store } from '../contexts/StoreContext';
+import { auth } from '../config/firebase';
+import { addFavorite, removeFavorite, getUserDocument } from '../services/userService';
+import { createReservation, getReservationByRestaurant } from '../services/reservationService';
 
 // Navigation types
 type RootStackParamList = {
@@ -70,17 +75,128 @@ export const StoreDetailScreen: React.FC = () => {
   const navigation = useNavigation<StoreDetailScreenNavigationProp>();
   const route = useRoute<StoreDetailScreenRouteProp>();
   const { store } = route.params;
-  
+
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [loading, setLoading] = useState(false);
+  const [isReserved, setIsReserved] = useState(false);
+  const [existingReservation, setExistingReservation] = useState<any>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+
   const currentTimeSlot = getCurrentTimeSlot();
-  
+
   const timeSlots = [
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
     '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'
   ];
 
-  const handleReservation = () => {
-    navigation.navigate('Reservation', { store });
+  // ユーザーのお気に入り状態をロード
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userData = await getUserDocument(user.uid);
+        if (userData?.favorites) {
+          setIsFavorite(userData.favorites.includes(store.id));
+        }
+      }
+    };
+    loadFavoriteStatus();
+  }, [store.id]);
+
+  // 予約済み状態をロード（1投稿につき1人まで）
+  useEffect(() => {
+    const loadReservationStatus = async () => {
+      const reservation = await getReservationByRestaurant(store.id);
+      if (reservation) {
+        setIsReserved(true);
+        setExistingReservation(reservation);
+      } else {
+        setIsReserved(false);
+        setExistingReservation(null);
+      }
+    };
+    loadReservationStatus();
+  }, [store.id]);
+
+  const handleFavoriteToggle = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('エラー', 'お気に入りに追加するにはログインが必要です');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFavorite(user.uid, store.id);
+        setIsFavorite(false);
+      } else {
+        await addFavorite(user.uid, store.id);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      Alert.alert('エラー', 'お気に入りの更新に失敗しました');
+    }
+  };
+
+  const handleTimeSelect = (time: string) => {
+    if (isReserved) {
+      Alert.alert('予約不可', 'この投稿は既に予約されています');
+      return;
+    }
+    setSelectedTime(time);
+  };
+
+  const handleReservation = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('エラー', '予約するにはログインが必要です');
+      return;
+    }
+
+    if (!selectedTime) {
+      Alert.alert('エラー', '予約時間を選択してください');
+      return;
+    }
+
+    // 既に予約されているかチェック（1投稿につき1人まで）
+    const reservation = await getReservationByRestaurant(store.id);
+
+    if (reservation) {
+      Alert.alert('予約不可', 'この投稿は既に予約されています');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userData = await getUserDocument(user.uid);
+      if (!userData) {
+        Alert.alert('エラー', 'ユーザー情報の取得に失敗しました');
+        return;
+      }
+
+      await createReservation({
+        restaurantId: store.id,
+        userId: user.uid,
+        userName: userData.displayName,
+        userEmail: userData.email,
+        reservationTime: selectedTime,
+        reservationDate: selectedDate,
+        reward: currentTimeSlot.reward,
+      });
+
+      Alert.alert('予約完了', '予約が完了しました', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error) {
+      Alert.alert('エラー', '予約に失敗しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -95,18 +211,30 @@ export const StoreDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={colors.gray[900]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>店舗詳細</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={24} color={colors.gray[900]} />
+        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={24}
+            color={isFavorite ? colors.error[500] : colors.gray[900]}
+          />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Store Image */}
         <View style={styles.imageContainer}>
+          {imageLoading && (
+            <View style={styles.imageLoadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary[500]} />
+            </View>
+          )}
           <Image
-            source={{ uri: store.image }}
+            source={typeof store.image === 'string' ? { uri: store.image } : store.image}
             style={styles.storeImage}
             resizeMode="cover"
+            onLoadStart={() => setImageLoading(true)}
+            onLoadEnd={() => setImageLoading(false)}
+            onError={() => setImageLoading(false)}
           />
           <View style={styles.rewardBadge}>
             <Ionicons name="diamond" size={20} color={colors.warning[500]} />
@@ -167,12 +295,45 @@ export const StoreDetailScreen: React.FC = () => {
           {/* Time Slots */}
           <View style={styles.timeSlotsSection}>
             <Text style={styles.sectionTitle}>予約可能時間</Text>
+            {isReserved && existingReservation && (
+              <Card style={styles.reservedInfoCard}>
+                <View style={styles.reservedInfoContent}>
+                  <Ionicons name="checkmark-circle" size={24} color={colors.success[500]} />
+                  <View style={styles.reservedInfoText}>
+                    <Text style={styles.reservedInfoTitle}>予約済み</Text>
+                    <Text style={styles.reservedInfoSubtitle}>
+                      {existingReservation.reservationDate} {existingReservation.reservationTime}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            )}
             <View style={styles.timeSlotsGrid}>
-              {timeSlots.map((time) => (
-                <TouchableOpacity key={time} style={styles.timeSlotButton}>
-                  <Text style={styles.timeSlotButtonText}>{time}</Text>
-                </TouchableOpacity>
-              ))}
+              {timeSlots.map((time) => {
+                const isSelected = selectedTime === time;
+                return (
+                  <TouchableOpacity
+                    key={time}
+                    style={[
+                      styles.timeSlotButton,
+                      isSelected && styles.timeSlotButtonSelected,
+                      isReserved && styles.timeSlotButtonReserved,
+                    ]}
+                    onPress={() => handleTimeSelect(time)}
+                    disabled={isReserved}
+                  >
+                    <Text
+                      style={[
+                        styles.timeSlotButtonText,
+                        isSelected && styles.timeSlotButtonTextSelected,
+                        isReserved && styles.timeSlotButtonTextReserved,
+                      ]}
+                    >
+                      {time}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -181,34 +342,24 @@ export const StoreDetailScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>予約について</Text>
             <View style={styles.infoList}>
               <View style={styles.infoItem}>
-                <Ionicons name="people-outline" size={20} color={colors.gray[500]} />
-                <Text style={styles.infoText}>1〜4名様まで予約可能</Text>
+                <Ionicons name="calendar-outline" size={20} color={colors.gray[500]} />
+                <Text style={styles.infoText}>予約は当日のみ可能です</Text>
               </View>
               <View style={styles.infoItem}>
                 <Ionicons name="time-outline" size={20} color={colors.gray[500]} />
-                <Text style={styles.infoText}>予約は当日から3日先まで可能</Text>
+                <Text style={styles.infoText}>予約した時間帯の報酬のみ獲得できます</Text>
               </View>
               <View style={styles.infoItem}>
-                <Ionicons name="diamond-outline" size={20} color={colors.gray[500]} />
-                <Text style={styles.infoText}>来店確認後、報酬が自動付与されます</Text>
+                <Ionicons name="qr-code-outline" size={20} color={colors.gray[500]} />
+                <Text style={styles.infoText}>来店時にQRコードを読み取ってください</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Ionicons name="cash-outline" size={20} color={colors.gray[500]} />
+                <Text style={styles.infoText}>お会計後、再度QRコードを読み取ると報酬が付与されます</Text>
               </View>
             </View>
           </Card>
 
-          {/* Free Posts Remaining */}
-          {store.freePostsRemaining > 0 && (
-            <Card style={styles.freePostsCard}>
-              <View style={styles.freePostsContent}>
-                <Ionicons name="gift-outline" size={24} color={colors.success[500]} />
-                <View style={styles.freePostsText}>
-                  <Text style={styles.freePostsTitle}>無料掲載中</Text>
-                  <Text style={styles.freePostsSubtitle}>
-                    あと{store.freePostsRemaining}回無料で掲載できます
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          )}
         </View>
 
         <View style={styles.bottomSpace} />
@@ -216,12 +367,22 @@ export const StoreDetailScreen: React.FC = () => {
 
       {/* Reserve Button */}
       <View style={styles.reserveButtonContainer}>
-        <Button 
-          title={store.isAvailable ? '予約する' : '現在予約できません'}
+        <Button
+          title={
+            loading
+              ? '予約中...'
+              : isReserved
+              ? '予約済み'
+              : !store.isAvailable
+              ? '現在予約できません'
+              : !selectedTime
+              ? '予約時間を選択してください'
+              : '予約する'
+          }
           onPress={handleReservation}
           variant="primary"
           size="large"
-          disabled={!store.isAvailable}
+          disabled={!store.isAvailable || !selectedTime || loading || isReserved}
           style={styles.reserveButton}
         />
       </View>
@@ -257,6 +418,18 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    backgroundColor: colors.gray[100],
+  },
+  imageLoadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+    backgroundColor: colors.gray[100],
   },
   storeImage: {
     width: SCREEN_WIDTH,
@@ -418,6 +591,30 @@ const styles = StyleSheet.create({
     color: colors.gray[900],
     marginBottom: 16,
   },
+  reservedInfoCard: {
+    backgroundColor: colors.success[50],
+    borderWidth: 1,
+    borderColor: colors.success[200],
+    marginBottom: 16,
+  },
+  reservedInfoContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reservedInfoText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  reservedInfoTitle: {
+    fontSize: fontSizes.base,
+    fontWeight: '600',
+    color: colors.success[700],
+    marginBottom: 2,
+  },
+  reservedInfoSubtitle: {
+    fontSize: fontSizes.sm,
+    color: colors.success[600],
+  },
   timeSlotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -433,10 +630,26 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
   },
+  timeSlotButtonSelected: {
+    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[500],
+  },
+  timeSlotButtonReserved: {
+    backgroundColor: colors.gray[100],
+    borderColor: colors.gray[300],
+    opacity: 0.6,
+  },
   timeSlotButtonText: {
     fontSize: fontSizes.sm,
     color: colors.gray[700],
     fontWeight: '500',
+  },
+  timeSlotButtonTextSelected: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+  timeSlotButtonTextReserved: {
+    color: colors.gray[400],
   },
   infoCard: {
     marginBottom: 24,
@@ -453,30 +666,6 @@ const styles = StyleSheet.create({
     color: colors.gray[600],
     marginLeft: 12,
     flex: 1,
-  },
-  freePostsCard: {
-    backgroundColor: colors.success[50],
-    borderWidth: 1,
-    borderColor: colors.success[100],
-    marginBottom: 16,
-  },
-  freePostsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  freePostsText: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  freePostsTitle: {
-    fontSize: fontSizes.base,
-    fontWeight: '600',
-    color: colors.success[700],
-    marginBottom: 2,
-  },
-  freePostsSubtitle: {
-    fontSize: fontSizes.sm,
-    color: colors.success[600],
   },
   bottomSpace: {
     height: 80,

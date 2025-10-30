@@ -1,15 +1,20 @@
 // src/components/store/StoreCard.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   Image,
   StyleSheet,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
 import { colors, spacing } from '../../utils/constants';
+import { auth } from '../../config/firebase';
+import { addFavorite, removeFavorite, getUserDocument } from '../../services/userService';
+import { getReservationByRestaurant } from '../../services/reservationService';
 
 interface Store {
   id: string;
@@ -32,29 +37,98 @@ interface StoreCardProps {
 
 
 export const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isReserved, setIsReserved] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
   // 画像ソースの処理：require()で取得した画像リソースまたはURIオブジェクト
   const imageSource = typeof store.image === 'object' && store.image.uri
     ? { uri: store.image.uri }
     : store.image;
 
+  // お気に入り状態をロード
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userData = await getUserDocument(user.uid);
+        if (userData?.favorites) {
+          setIsFavorite(userData.favorites.includes(store.id));
+        }
+      }
+    };
+    loadFavoriteStatus();
+  }, [store.id]);
+
+  // 予約状態をロード
+  useEffect(() => {
+    const loadReservationStatus = async () => {
+      const reservation = await getReservationByRestaurant(store.id);
+      setIsReserved(!!reservation);
+    };
+    loadReservationStatus();
+  }, [store.id]);
+
+  const handleFavoriteToggle = async (e: any) => {
+    e.stopPropagation(); // カードのonPressを防ぐ
+
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('エラー', 'お気に入りに追加するにはログインが必要です');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFavorite(user.uid, store.id);
+        setIsFavorite(false);
+      } else {
+        await addFavorite(user.uid, store.id);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      Alert.alert('エラー', 'お気に入りの更新に失敗しました');
+    }
+  };
+
   return (
     <Card style={styles.cardContainer}>
       <TouchableOpacity onPress={() => onPress(store)} activeOpacity={0.8}>
         <View style={styles.imageContainer}>
+          {imageLoading && (
+            <View style={styles.imageLoadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary[500]} />
+            </View>
+          )}
           <Image
             source={imageSource}
             style={styles.storeImage}
             resizeMode="cover"
+            onLoadStart={() => setImageLoading(true)}
+            onLoadEnd={() => setImageLoading(false)}
+            onError={() => setImageLoading(false)}
           />
-          {/* 報酬バッジ */}
-          <View style={styles.rewardBadge}>
-            <Ionicons name="cash-outline" size={16} color={colors.warning[500]} />
-            <Text style={styles.rewardText}>¥{store.currentReward}</Text>
-          </View>
+          {/* いいねボタン */}
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={handleFavoriteToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? colors.error[500] : colors.white}
+            />
+          </TouchableOpacity>
           {/* 利用可能状態 */}
           {store.isAvailable && (
-            <View style={styles.availableBadge}>
-              <Text style={styles.availableText}>受付中</Text>
+            <View style={[
+              styles.availableBadge,
+              isReserved && styles.unavailableBadge
+            ]}>
+              <Text style={styles.availableText}>
+                {isReserved ? '受付終了' : '受付中'}
+              </Text>
             </View>
           )}
         </View>
@@ -102,32 +176,38 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    backgroundColor: colors.gray[100],
+  },
+  imageLoadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+    backgroundColor: colors.gray[100],
   },
   storeImage: {
     width: '100%',
     height: 160,
   },
-  rewardBadge: {
+  favoriteButton: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
-  },
-  rewardText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginLeft: 4,
   },
   availableBadge: {
     position: 'absolute',
@@ -137,6 +217,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
+  },
+  unavailableBadge: {
+    backgroundColor: colors.gray[500],
   },
   availableText: {
     fontSize: 12,
