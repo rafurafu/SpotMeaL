@@ -18,6 +18,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Native folders (can be regenerated with expo prebuild)
+/ios/
+/android/
+
 # Metro
 .metro-health-check*
 

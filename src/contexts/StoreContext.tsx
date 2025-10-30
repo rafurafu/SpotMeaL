@@ -23,6 +23,8 @@ interface Store {
   currentReward: number;
   isAvailable: boolean;
   freePostsRemaining: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface StoreContextType {
@@ -65,6 +67,8 @@ const convertFirestoreToStore = (restaurant: FirestoreRestaurant): Store => {
     currentReward: restaurant.currentReward,
     isAvailable: restaurant.isAvailable,
     freePostsRemaining: restaurant.freePostsRemaining,
+    latitude: (restaurant as any).latitude,
+    longitude: (restaurant as any).longitude,
   };
 };
 

@@ -28,6 +28,7 @@ type RootStackParamList = {
   Home: undefined;
   StoreDetail: { store: Store };
   Reservation: { store: Store };
+  Map: { store: Store };
 };
 
 type StoreDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'StoreDetail'>;
@@ -211,13 +212,18 @@ export const StoreDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={colors.gray[900]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>店舗詳細</Text>
-        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={24}
-            color={isFavorite ? colors.error[500] : colors.gray[900]}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('Map', { store })} style={styles.headerButton}>
+            <Ionicons name="map-outline" size={24} color={colors.gray[900]} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? colors.error[500] : colors.gray[900]}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -415,6 +421,14 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontWeight: '600',
     color: colors.gray[900],
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: 4,
+    marginRight: 8,
   },
   favoriteButton: {
     padding: 4,

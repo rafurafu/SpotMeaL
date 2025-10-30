@@ -33,6 +33,7 @@ type RootStackParamList = {
   Favorites: undefined;
   StoreRegistration: undefined;
   QRScan: { reservationId: string };
+  Map: { store: Store };
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -160,9 +161,14 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.headerActions}>
                 <TouchableOpacity
                   style={styles.headerButton}
-                  onPress={() => navigation.navigate('Profile')}
+                  onPress={() => {
+                    if (stores.length > 0) {
+                      navigation.navigate('Map', { store: stores[0] });
+                    }
+                  }}
+                  disabled={stores.length === 0}
                 >
-                  <Ionicons name="person-outline" size={24} color={colors.gray[600]} />
+                  <Ionicons name="map-outline" size={24} color={stores.length > 0 ? colors.gray[600] : colors.gray[400]} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.headerButton, styles.favoriteButtonContainer]}
