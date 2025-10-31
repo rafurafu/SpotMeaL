@@ -7,6 +7,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { StoreRegistrationScreen } from '../screens/StoreRegistrationScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
+import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { MyReservationsScreen } from '../screens/MyReservationsScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Login: undefined;
   SignUp: undefined;
+  ProfileSetup: undefined;
   Home: undefined;
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
@@ -42,7 +44,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 // メインナビゲーター
 export const AppNavigator = () => {
-  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, loading, isNewUser } = useAppSelector((state) => state.auth);
 
   const handleAuthSuccess = () => {
     // Navigation will be handled automatically by Redux state change
@@ -77,15 +79,31 @@ export const AppNavigator = () => {
         >
           {() => <AuthNavigator onAuthSuccess={handleAuthSuccess} />}
         </Stack.Screen>
+      ) : isNewUser ? (
+        // 新規登録直後 - プロフィール設定画面へ
+        <Stack.Screen
+          name="ProfileSetup"
+          options={{ headerShown: false }}
+
+        >
+          {(props) => (
+            <ProfileSetupScreen
+              {...props}
+              onComplete={() => {}}
+              onSkip={() => {}}
+            />
+          )}
+        </Stack.Screen>
       ) : (
+        // 通常のログイン済みユーザー
         <>
-          <Stack.Screen 
-            name="Home" 
+          <Stack.Screen
+            name="Home"
             component={HomeScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="StoreDetail" 
+          <Stack.Screen
+            name="StoreDetail"
             component={StoreDetailScreen}
             options={{ 
               headerShown: false,

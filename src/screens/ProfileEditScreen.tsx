@@ -18,11 +18,11 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import * as ImagePicker from 'expo-image-picker';
-import { getCurrentUser } from '../services/authService';
+import { getCurrentUser, deleteAccount } from '../services/authService';
 import { uploadProfileIcon, deleteProfileIcon } from '../services/storageService';
-import { updateUserDocument } from '../services/userService';
+import { updateUserDocument, deleteUserDocument } from '../services/userService';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { updateUserProfile } from '../store/slices/authSlice';
+import { updateUserProfile, logout } from '../store/slices/authSlice';
 
 type RootStackParamList = {
   Profile: undefined;
@@ -203,14 +203,57 @@ export const ProfileEditScreen: React.FC = () => {
   const handleDeleteAccount = () => {
     Alert.alert(
       'アカウント削除',
-      'この操作は取り消せません。本当にアカウントを削除しますか？',
+      'この操作は取り消せません。本当にアカウントを削除しますか？\n\n削除されるデータ：\n• プロフィール情報\n• お気に入り店舗\n• 予約履歴\n• すべての統計情報',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
-          text: '削除',
+          text: '削除する',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('削除確認', 'アカウント削除機能は開発中です');
+          onPress: async () => {
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+              Alert.alert('エラー', 'ログインしてください');
+              return;
+            }
+
+            setIsLoading(true);
+            try {
+              // 1. Firestoreのユーザードキュメントを削除
+              await deleteUserDocument(currentUser.uid);
+
+              // 2. プロフィール画像がある場合は削除
+              if (profile.avatar && profile.avatar.includes('firebasestorage.googleapis.com')) {
+                try {
+                  await deleteProfileIcon(profile.avatar);
+                } catch (error) {
+                  console.error('Profile image deletion error (non-critical):', error);
+                }
+              }
+
+              // 3. Firebase Authenticationのアカウントを削除
+              await deleteAccount();
+
+              // 4. ログアウト処理（Redux stateをクリア）
+              dispatch(logout());
+
+              Alert.alert(
+                'アカウント削除完了',
+                'アカウントが削除されました。ご利用ありがとうございました。',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // ログイン画面に戻る（自動的に遷移する）
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              console.error('Delete account error:', error);
+              Alert.alert('エラー', error.message || 'アカウントの削除に失敗しました');
+            } finally {
+              setIsLoading(false);
+            }
           },
         },
       ]
