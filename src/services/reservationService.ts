@@ -12,6 +12,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { addReward } from './userService';
 
 /**
  * Firestoreに保存する予約情報の型
@@ -30,6 +31,12 @@ export interface FirestoreReservation {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   cancellationFee?: number; // キャンセル料
   cancelledAt?: Timestamp | ReturnType<typeof serverTimestamp>; // キャンセル日時
+  // レビュー関連
+  hasReviewed?: boolean; // レビュー済みかどうか
+  reviewRating?: number; // 評価（1-5）
+  reviewComment?: string; // レビューコメント
+  reviewedAt?: Timestamp | ReturnType<typeof serverTimestamp>; // レビュー日時
+  reviewReward?: number; // レビュー報酬（10円）
   createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
   updatedAt: Timestamp | ReturnType<typeof serverTimestamp>;
 }
@@ -219,5 +226,42 @@ export const completeReservation = async (reservationId: string): Promise<void> 
   } catch (error) {
     console.error('Error completing reservation:', error);
     throw new Error('予約の完了に失敗しました');
+  }
+};
+
+/**
+ * レビューを投稿（10円の報酬付き）
+ */
+export const submitReview = async (
+  reservationId: string,
+  userId: string,
+  rating: number,
+  comment: string
+): Promise<void> => {
+  try {
+    const reservationRef = doc(db, 'reservations', reservationId);
+    const REVIEW_REWARD = 10; // レビュー報酬: 10円
+
+    // レビュー情報を予約に保存
+    await setDoc(
+      reservationRef,
+      {
+        hasReviewed: true,
+        reviewRating: rating,
+        reviewComment: comment,
+        reviewedAt: serverTimestamp(),
+        reviewReward: REVIEW_REWARD,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // ユーザーに報酬を付与
+    await addReward(userId, REVIEW_REWARD);
+
+    console.log('Review submitted successfully with reward:', REVIEW_REWARD);
+  } catch (error) {
+    console.error('Error submitting review:', error);
+    throw new Error('レビューの投稿に失敗しました');
   }
 };

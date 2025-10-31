@@ -177,13 +177,13 @@ export const getCurrentReward = (): { amount: number; timeSlot: string } => {
   const hour = now.getHours() + now.getMinutes() / 60;
 
   if (hour >= 14 && hour < 17) {
-    return { amount: 150, timeSlot: 'アイドルタイム (14:00-17:00)' };
+    return { amount: 120, timeSlot: 'アイドルタイム (14:00-17:00)' };
   } else if (hour >= 17 && hour < 19) {
-    return { amount: 120, timeSlot: '平日夜早め (17:00-19:00)' };
+    return { amount: 100, timeSlot: '平日夜早め (17:00-19:00)' };
   } else if (hour >= 12 && hour < 13.5) {
-    return { amount: 80, timeSlot: 'ピーク時 (12:00-13:30)' };
+    return { amount: 40, timeSlot: 'ピーク時 (12:00-13:30)' };
   } else {
-    return { amount: 100, timeSlot: '通常時間' };
+    return { amount: 80, timeSlot: '通常時間' };
   }
 };
 

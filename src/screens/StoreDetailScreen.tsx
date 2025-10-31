@@ -46,28 +46,28 @@ const getCurrentTimeSlot = () => {
       name: 'アイドルタイム',
       startTime: '14:00',
       endTime: '17:00',
-      reward: 150,
+      reward: 120,
     };
   } else if (hour >= 17 && hour < 19) {
     return {
       name: '平日夜早め',
       startTime: '17:00',
       endTime: '19:00',
-      reward: 120,
+      reward: 100,
     };
   } else if (hour >= 12 && hour < 13.5) {
     return {
       name: 'ピーク時',
       startTime: '12:00',
       endTime: '13:30',
-      reward: 80,
+      reward: 40,
     };
   } else {
     return {
       name: '通常時間',
       startTime: '09:00',
       endTime: '22:00',
-      reward: 100,
+      reward: 80,
     };
   }
 };
@@ -79,13 +79,13 @@ const getRewardForTime = (timeString: string): number => {
   const timeValue = hours + minutes / 60;
 
   if (timeValue >= 14 && timeValue < 17) {
-    return 150; // アイドルタイム
+    return 120; // アイドルタイム
   } else if (timeValue >= 17 && timeValue < 19) {
-    return 120; // 平日夜早め
+    return 100; // 平日夜早め
   } else if (timeValue >= 12 && timeValue < 13.5) {
-    return 80; // ピーク時
+    return 40; // ピーク時
   } else {
-    return 100; // 通常時間
+    return 80; // 通常時間
   }
 };
 
