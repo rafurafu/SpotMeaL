@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   User,
   UserCredential,
+  deleteUser,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { getUserDocument } from './userService';
@@ -74,6 +75,29 @@ export const logout = async (): Promise<void> => {
  */
 export const getCurrentUser = (): User | null => {
   return auth.currentUser;
+};
+
+/**
+ * アカウントを削除
+ */
+export const deleteAccount = async (): Promise<void> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error('ユーザーがログインしていません');
+    }
+
+    await deleteUser(user);
+  } catch (error: any) {
+    console.error('Delete account error:', error);
+
+    // 再認証が必要な場合
+    if (error.code === 'auth/requires-recent-login') {
+      throw new Error('セキュリティのため、再度ログインしてからアカウント削除を行ってください');
+    }
+
+    throw handleAuthError(error);
+  }
 };
 
 /**

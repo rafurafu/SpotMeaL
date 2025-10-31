@@ -30,6 +30,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  isNewUser: boolean; // 新規登録直後かどうか
 }
 
 export interface AuthResponse {

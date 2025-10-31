@@ -16,7 +16,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { colors, fontSizes, spacing } from '../utils/constants';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { clearError, setUser, setLoading, setError } from '../store/slices/authSlice';
+import { clearError, setUser, setNewUser, setLoading, setError } from '../store/slices/authSlice';
 import { registerWithEmail, loginWithGoogle } from '../services/authService';
 import { createUserDocument } from '../services/userService';
 
@@ -132,7 +132,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
         favorites: [],
       };
       dispatch(setUser(user));
-      Alert.alert('登録完了', 'アカウントが作成されました！');
+      // 新規登録フラグをセット（プロフィール設定画面へ遷移するため）
+      dispatch(setNewUser(true));
     } catch (error: any) {
       dispatch(setError(error.message || '登録に失敗しました'));
     } finally {

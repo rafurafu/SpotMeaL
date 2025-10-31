@@ -3,6 +3,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
@@ -189,5 +190,19 @@ export const resetMonthlyVisits = async (uid: string): Promise<void> => {
   } catch (error) {
     console.error('Error resetting monthly visits:', error);
     throw new Error('今月の来店回数のリセットに失敗しました');
+  }
+};
+
+/**
+ * Firestoreからユーザードキュメントを削除
+ */
+export const deleteUserDocument = async (uid: string): Promise<void> => {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await deleteDoc(userRef);
+    console.log('User document deleted successfully');
+  } catch (error) {
+    console.error('Error deleting user document:', error);
+    throw new Error('ユーザー情報の削除に失敗しました');
   }
 };
