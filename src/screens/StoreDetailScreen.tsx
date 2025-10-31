@@ -21,13 +21,13 @@ import { colors, fontSizes, DIMENSIONS } from '../utils/constants';
 import { Store } from '../contexts/StoreContext';
 import { auth } from '../config/firebase';
 import { addFavorite, removeFavorite, getUserDocument } from '../services/userService';
-import { createReservation, getReservationByRestaurant } from '../services/reservationService';
+import { getReservationByRestaurant } from '../services/reservationService';
 
 // Navigation types
 type RootStackParamList = {
   Home: undefined;
   StoreDetail: { store: Store };
-  Reservation: { store: Store };
+  Reservation: { store: Store; selectedTime: string; selectedDate: string; reward: number };
   Map: { store: Store };
 };
 
@@ -40,7 +40,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const getCurrentTimeSlot = () => {
   const now = new Date();
   const hour = now.getHours() + now.getMinutes() / 60;
-  
+
   if (hour >= 14 && hour < 17) {
     return {
       name: 'アイドルタイム',
@@ -69,6 +69,23 @@ const getCurrentTimeSlot = () => {
       endTime: '22:00',
       reward: 100,
     };
+  }
+};
+
+// 選択した時間に基づいて報酬を計算
+const getRewardForTime = (timeString: string): number => {
+  // '12:00' -> 12.0, '12:30' -> 12.5 に変換
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const timeValue = hours + minutes / 60;
+
+  if (timeValue >= 14 && timeValue < 17) {
+    return 150; // アイドルタイム
+  } else if (timeValue >= 17 && timeValue < 19) {
+    return 120; // 平日夜早め
+  } else if (timeValue >= 12 && timeValue < 13.5) {
+    return 80; // ピーク時
+  } else {
+    return 100; // 通常時間
   }
 };
 
@@ -165,36 +182,27 @@ export const StoreDetailScreen: React.FC = () => {
     }
 
     // 既に予約されているかチェック（1投稿につき1人まで）
-    const reservation = await getReservationByRestaurant(store.id);
-
-    if (reservation) {
-      Alert.alert('予約不可', 'この投稿は既に予約されています');
-      return;
-    }
-
     setLoading(true);
     try {
-      const userData = await getUserDocument(user.uid);
-      if (!userData) {
-        Alert.alert('エラー', 'ユーザー情報の取得に失敗しました');
+      const reservation = await getReservationByRestaurant(store.id);
+
+      if (reservation) {
+        Alert.alert('予約不可', 'この投稿は既に予約されています');
         return;
       }
 
-      await createReservation({
-        restaurantId: store.id,
-        userId: user.uid,
-        userName: userData.displayName,
-        userEmail: userData.email,
-        reservationTime: selectedTime,
-        reservationDate: selectedDate,
-        reward: currentTimeSlot.reward,
-      });
+      // 選択した時間に応じた報酬を計算
+      const selectedTimeReward = getRewardForTime(selectedTime);
 
-      Alert.alert('予約完了', '予約が完了しました', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      // 予約詳細画面に遷移
+      navigation.navigate('Reservation', {
+        store,
+        selectedTime,
+        selectedDate,
+        reward: selectedTimeReward,
+      });
     } catch (error) {
-      Alert.alert('エラー', '予約に失敗しました');
+      Alert.alert('エラー', '予約情報の確認に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -379,14 +387,14 @@ export const StoreDetailScreen: React.FC = () => {
         <Button
           title={
             loading
-              ? '予約中...'
+              ? '確認中...'
               : isReserved
               ? '予約済み'
               : !store.isAvailable
               ? '現在予約できません'
               : !selectedTime
               ? '予約時間を選択してください'
-              : '予約する'
+              : '予約詳細へ'
           }
           onPress={handleReservation}
           variant="primary"

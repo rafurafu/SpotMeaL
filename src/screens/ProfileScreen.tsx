@@ -21,6 +21,7 @@ import { getCurrentUser, loadUserProfile } from '../services/authService';
 
 type RootStackParamList = {
   ProfileEdit: undefined;
+  MyReservations: undefined;
 };
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, never>;
@@ -107,6 +108,10 @@ export default function ProfileScreen(): React.JSX.Element {
     navigation.navigate('ProfileEdit');
   };
 
+  const handleMyReservations = () => {
+    navigation.navigate('MyReservations');
+  };
+
   const handleNotificationSettings = () => {
     Alert.alert('通知設定', '通知設定機能は開発中です');
   };
@@ -141,6 +146,13 @@ export default function ProfileScreen(): React.JSX.Element {
   };
 
   const menuItems: MenuItem[] = [
+    {
+      id: 'reservations',
+      title: '予約一覧',
+      icon: 'calendar-outline',
+      color: colors.primary[500],
+      onPress: handleMyReservations,
+    },
     {
       id: 'notifications',
       title: '通知設定',

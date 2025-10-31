@@ -25,7 +25,11 @@ export interface FirestoreReservation {
   reservationTime: string; // '12:00', '12:30'など
   reservationDate: string; // YYYY-MM-DD形式
   reward: number;
+  guests: number; // 人数
+  specialRequests?: string; // ご要望
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  cancellationFee?: number; // キャンセル料
+  cancelledAt?: Timestamp | ReturnType<typeof serverTimestamp>; // キャンセル日時
   createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
   updatedAt: Timestamp | ReturnType<typeof serverTimestamp>;
 }
@@ -94,9 +98,7 @@ export const getUserReservations = async (userId: string): Promise<FirestoreRese
     const reservationsRef = collection(db, 'reservations');
     const q = query(
       reservationsRef,
-      where('userId', '==', userId),
-      orderBy('reservationDate', 'desc'),
-      orderBy('reservationTime', 'desc')
+      where('userId', '==', userId)
     );
 
     const snapshot = await getDocs(q);
@@ -104,6 +106,13 @@ export const getUserReservations = async (userId: string): Promise<FirestoreRese
 
     snapshot.forEach((doc) => {
       reservations.push(doc.data() as FirestoreReservation);
+    });
+
+    // クライアント側で予約日時でソート（降順 - 新しい順）
+    reservations.sort((a, b) => {
+      const dateA = new Date(`${a.reservationDate}T${a.reservationTime}`).getTime();
+      const dateB = new Date(`${b.reservationDate}T${b.reservationTime}`).getTime();
+      return dateB - dateA;
     });
 
     return reservations;
@@ -121,9 +130,7 @@ export const getRestaurantReservations = async (restaurantId: string): Promise<F
     const reservationsRef = collection(db, 'reservations');
     const q = query(
       reservationsRef,
-      where('restaurantId', '==', restaurantId),
-      orderBy('reservationDate', 'desc'),
-      orderBy('reservationTime', 'desc')
+      where('restaurantId', '==', restaurantId)
     );
 
     const snapshot = await getDocs(q);
@@ -131,6 +138,13 @@ export const getRestaurantReservations = async (restaurantId: string): Promise<F
 
     snapshot.forEach((doc) => {
       reservations.push(doc.data() as FirestoreReservation);
+    });
+
+    // クライアント側で予約日時でソート（降順 - 新しい順）
+    reservations.sort((a, b) => {
+      const dateA = new Date(`${a.reservationDate}T${a.reservationTime}`).getTime();
+      const dateB = new Date(`${b.reservationDate}T${b.reservationTime}`).getTime();
+      return dateB - dateA;
     });
 
     return reservations;
@@ -143,18 +157,23 @@ export const getRestaurantReservations = async (restaurantId: string): Promise<F
 /**
  * 予約をキャンセル
  */
-export const cancelReservation = async (reservationId: string): Promise<void> => {
+export const cancelReservation = async (
+  reservationId: string,
+  cancellationFee: number = 0
+): Promise<void> => {
   try {
     const reservationRef = doc(db, 'reservations', reservationId);
     await setDoc(
       reservationRef,
       {
         status: 'cancelled',
+        cancellationFee,
+        cancelledAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
-    console.log('Reservation cancelled successfully');
+    console.log('Reservation cancelled successfully with fee:', cancellationFee);
   } catch (error) {
     console.error('Error cancelling reservation:', error);
     throw new Error('予約のキャンセルに失敗しました');

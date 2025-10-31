@@ -8,6 +8,7 @@ import { StoreDetailScreen } from '../screens/StoreDetailScreen';
 import { StoreRegistrationScreen } from '../screens/StoreRegistrationScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
+import { MyReservationsScreen } from '../screens/MyReservationsScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
 import { MapScreen } from '../screens/MapScreen';
@@ -29,7 +30,8 @@ export type RootStackParamList = {
   StoreDetail: { store: Store };
   StoreRegistration: undefined;
   ProfileEdit: undefined;
-  Reservation: { store: Store };
+  Reservation: { store: Store; selectedTime: string; selectedDate: string; reward: number };
+  MyReservations: undefined;
   QRScan: { reservationId: string };
   Profile: undefined;
   Favorites: undefined;
@@ -127,10 +129,15 @@ export const AppNavigator = () => {
           <Stack.Screen
             name="Reservation"
             component={ReservationScreen}
-            options={{ title: '予約' }}
+            options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="QRScan" 
+          <Stack.Screen
+            name="MyReservations"
+            component={MyReservationsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="QRScan"
             component={QRScanScreen}
             options={{ title: 'QRスキャン' }}
           />
