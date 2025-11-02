@@ -5,12 +5,18 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../utils/constants';
 import { QRScanConfirm } from '../components/common/QRScanConfirm';
+import { CheckInSuccess } from '../components/common/CheckInSuccess';
 
 export const QRScanScreen: React.FC = () => {
   const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showCheckInSuccess, setShowCheckInSuccess] = useState(false);
+  const [checkInData, setCheckInData] = useState<{
+    storeName?: string;
+    reservationId?: string;
+  }>({});
 
   const handleStartScan = async () => {
     if (!permission?.granted) {
@@ -27,34 +33,22 @@ export const QRScanScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarcodeScanned = ({ data }: { type: string; data: string }) => {
     setScanned(true);
-    
+
     // QRコードのデータを処理
     if (data.startsWith('spotmeal://')) {
       // SpotMeal専用QRコード
       const params = data.replace('spotmeal://', '');
       if (params.startsWith('reservation/')) {
         const reservationId = params.replace('reservation/', '');
-        Alert.alert(
-          '予約確認',
-          `予約ID: ${reservationId}\n来店確認を行いますか？`,
-          [
-            {
-              text: 'キャンセル',
-              onPress: () => setScanned(false),
-              style: 'cancel',
-            },
-            {
-              text: '確認',
-              onPress: () => {
-                // 予約確認処理を実装
-                Alert.alert('来店確認完了', '来店が確認されました！');
-                navigation.goBack();
-              },
-            },
-          ]
-        );
+        // チェックイン成功画面を表示
+        setCheckInData({
+          storeName: 'サンプル店舗', // TODO: 実際の店舗名を取得
+          reservationId: reservationId,
+        });
+        setShowCamera(false);
+        setShowCheckInSuccess(true);
       } else if (params.startsWith('store/')) {
         const storeId = params.replace('store/', '');
         Alert.alert(
@@ -94,6 +88,23 @@ export const QRScanScreen: React.FC = () => {
       );
     }
   };
+
+  const handleCloseCheckIn = () => {
+    setShowCheckInSuccess(false);
+    setScanned(false);
+    navigation.goBack();
+  };
+
+  // チェックイン成功画面を表示
+  if (showCheckInSuccess) {
+    return (
+      <CheckInSuccess
+        storeName={checkInData.storeName}
+        reservationId={checkInData.reservationId}
+        onClose={handleCloseCheckIn}
+      />
+    );
+  }
 
   // 確認画面を表示
   if (!showCamera) {

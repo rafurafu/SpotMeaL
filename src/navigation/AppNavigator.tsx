@@ -11,6 +11,7 @@ import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
 import { ReservationScreen } from '../screens/ReservationScreen';
 import { MyReservationsScreen } from '../screens/MyReservationsScreen';
 import { QRScanScreen } from '../screens/QRScanScreen';
+import { QRCodeGeneratorScreen } from '../screens/QRCodeGeneratorScreen';
 import { EarningsScreen } from '../screens/EarningsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   Reservation: { store: Store; selectedTime: string; selectedDate: string; reward: number };
   MyReservations: undefined;
   QRScan: { reservationId: string };
+  QRCodeGenerator: undefined;
   Profile: undefined;
   Favorites: undefined;
   Map: { store: Store };
@@ -157,7 +159,15 @@ export const AppNavigator = () => {
           <Stack.Screen
             name="QRScan"
             component={QRScanScreen}
-            options={{ title: 'QRスキャン' }}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="QRCodeGenerator"
+            component={QRCodeGeneratorScreen}
+            options={{
+              title: 'QRコード生成',
+              headerShown: true
+            }}
           />
         </>
       )}
