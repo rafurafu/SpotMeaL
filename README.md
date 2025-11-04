@@ -117,6 +117,11 @@
 - **expo-image-picker** ~17.0.8 (画像選択)
 - **expo-file-system** 19.0.17 (ファイルシステム)
 
+### QRコード・UI
+- **react-native-qrcode-svg** 6.3.20 (QRコード生成)
+- **react-native-svg** 15.14.0 (SVGレンダリング)
+- **@react-native-community/datetimepicker** 8.5.0 (日時選択)
+
 ### マップ
 - **react-native-maps** 1.20.1
 - **Google Maps API** (iOS/Android統合済み)
@@ -169,6 +174,9 @@ SpotMeal/
 │   │   └── StoreRegistrationScreen.tsx  # 店舗登録画面
 │   ├── scripts/
 │   │   └── migrateStores.ts         # 店舗データ移行スクリプト
+├── scripts/
+│   ├── generate-qr.js               # QRコード生成スクリプト
+│   └── generate-qr-image.js         # QRコード画像生成スクリプト
 │   ├── services/
 │   │   ├── authService.ts           # 認証サービス
 │   │   ├── imageService.ts          # 画像処理サービス
@@ -250,10 +258,14 @@ SpotMeal/
 - [x] カメラ機能統合
 - [x] バーコードスキャナー
 - [x] QRスキャン確認モーダル
+- [x] QRコード生成機能（店舗用チェックイン/チェックアウト）
+- [x] react-native-qrcode-svg統合
 
 #### 予約機能
 - [x] 店舗予約画面
 - [x] 予約情報のFirestore保存
+- [x] 予約システムフロー完全実装
+- [x] 予約状態管理
 
 #### プロフィール機能
 - [x] プロフィール表示・編集
@@ -268,11 +280,12 @@ SpotMeal/
 - [x] スペーシングシステム
 
 ### 📋 今後の実装予定
+- [ ] チェックイン/チェックアウト機能の完全実装
+- [ ] 報酬自動反映システム
 - [ ] 決済システム連携（Stripe）
 - [ ] プッシュ通知（expo-notifications）
-- [ ] 報酬管理システムの最適化
 - [ ] レビュー・評価機能
-- [ ] 管理者ダッシュボード
+- [ ] 管理者ダッシュボード（店舗・ユーザー管理）
 
 ---
 
@@ -340,7 +353,9 @@ SpotMeal/
   "expo-location": "~19.0.7",
   "expo-image-picker": "~17.0.8",
   "react-native-maps": "1.20.1",
-  "@react-native-async-storage/async-storage": "^1.24.0"
+  "react-native-qrcode-svg": "^6.3.20",
+  "@react-native-async-storage/async-storage": "^1.24.0",
+  "@react-native-community/datetimepicker": "^8.5.0"
 }
 ```
 
@@ -359,4 +374,4 @@ SpotMeal/
 
 ---
 
-*最終更新: 2025年10月30日*
+*最終更新: 2025年11月4日*
